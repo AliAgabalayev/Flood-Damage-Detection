@@ -1,0 +1,34 @@
+# Data & model artifacts (keep folder structure via .gitkeep)
+data/raw/*
+data/processed/*
+models/*
+*.pth
+*.pt
+*.ckpt
+!**/.gitkeep
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+
+# Environments
+.venv/
+venv/
+env/
+
+# Notebooks
+.ipynb_checkpoints/
+
+# Logs & runs
+runs/
+logs/
+*.log
+
+# OS / editor
+.DS_Store
+.idea/
+.vscode/

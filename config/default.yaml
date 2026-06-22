@@ -1,0 +1,27 @@
+# Default configuration for flood damage segmentation.
+
+data:
+  raw_dir: data/raw
+  processed_dir: data/processed
+  image_size: 512       # patch size after tiling/resizing
+  num_classes: 2        # e.g. background / flooded (adjust as needed)
+  val_split: 0.2
+
+model:
+  arch: unet            # unet | deeplabv3 | ...
+  backbone: resnet34
+  pretrained: true
+
+training:
+  batch_size: 8
+  epochs: 50
+  lr: 0.0003
+  optimizer: adam
+  loss: dice_bce        # dice | bce | focal | dice_bce
+  device: cuda          # cuda | cpu
+  num_workers: 4
+  checkpoint_dir: models
+
+inference:
+  checkpoint: models/best.pth
+  threshold: 0.5
