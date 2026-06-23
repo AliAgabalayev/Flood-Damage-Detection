@@ -1,27 +1,43 @@
-# Default configuration for flood damage segmentation.
+# Flood water segmentation — Sen1Floods11, Sentinel-1 SAR (VV, VH + VV-VH ratio).
+# Decisions: D1 S1-only(3ch) | D2 binary | D3 512 | D4 Lightning+smp |
+#            D5 MLflow | D6 DVC | D7 yaml+pydantic | D8 local GPU (RTX 3060 6GB)
+
+seed: 42
 
 data:
-  raw_dir: data/raw
-  processed_dir: data/processed
-  image_size: 512       # patch size after tiling/resizing
-  num_classes: 2        # e.g. background / flooded (adjust as needed)
-  val_split: 0.2
+  root: data/processed/sen1floods11   # contains S1Hand/*.tif and LabelHand/*.tif
+  split_dir: data/splits              # train.csv / val.csv / test.csv
+  image_size: 512
+  in_channels: 3                      # VV, VH, (VV - VH)
+  num_classes: 1                      # binary -> single logit + sigmoid
+  ignore_index: -1                    # Sen1Floods11 label nodata
+  # Per-channel dB clip ranges used for [0,1] normalization (see DATA_CONTRACT.md)
+  vv_clip: [-23.0, 0.0]
+  vh_clip: [-28.0, -5.0]
+  ratio_clip: [0.0, 15.0]
 
 model:
-  arch: unet            # unet | deeplabv3 | ...
-  backbone: resnet34
-  pretrained: true
+  arch: deeplabv3plus                 # unet | deeplabv3plus
+  encoder: resnet34
+  encoder_weights: imagenet
 
 training:
-  batch_size: 8
+  batch_size: 2                       # 6GB VRAM
+  accumulate_grad_batches: 4          # effective batch = 8
+  precision: 16-mixed
   epochs: 50
   lr: 0.0003
-  optimizer: adam
-  loss: dice_bce        # dice | bce | focal | dice_bce
-  device: cuda          # cuda | cpu
+  optimizer: adamw
+  weight_decay: 0.0001
+  loss: dice_bce                      # dice | bce | dice_bce
   num_workers: 4
+  device: auto                        # auto | cuda | cpu
   checkpoint_dir: models
 
+mlflow:
+  tracking_uri: sqlite:///experiments/mlflow.db
+  experiment_name: sen1floods11-flood-seg
+
 inference:
-  checkpoint: models/best.pth
+  checkpoint: models/best.ckpt
   threshold: 0.5
