@@ -6,6 +6,11 @@ models/*
 *.pt
 *.ckpt
 !**/.gitkeep
+!**/*.dvc
+
+# Experiment tracking (MLflow sqlite backend + local artifacts)
+mlflow.db
+mlruns/
 
 # Python
 __pycache__/
