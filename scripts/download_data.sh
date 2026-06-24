@@ -1,15 +1,3 @@
-#!/usr/bin/env bash
-# E2 — Sen1Floods11 downloader (hand-labeled benchmark set).
-#
-# Pulls the Sentinel-1 SAR chips + hand water masks that the data contract
-# (DATA_CONTRACT.md) is built against, plus the OFFICIAL train/val/test split
-# CSVs (B5/S2). Public bucket — anonymous access, no GCP auth needed.
-#
-# Idempotent: re-running only fetches changed/missing files (gsutil rsync).
-#
-# Usage:  bash scripts/download_data.sh
-# Needs:  gsutil  (pip install gsutil  — already in .venv)
-
 set -euo pipefail
 
 BUCKET="gs://sen1floods11/v1.1"
