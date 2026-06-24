@@ -33,6 +33,12 @@ runs/
 logs/
 *.log
 
+# Experiment tracking (MLflow) & data splits artifacts
+experiments/
+mlruns/
+*.db
+data/splits/*.csv
+
 # OS / editor
 .DS_Store
 .idea/
