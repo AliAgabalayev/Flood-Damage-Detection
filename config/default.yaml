@@ -1,7 +1,7 @@
 seed: 42
 
 data:
-  root: data/raw/v1.1/data/flood_events/HandLabeled
+  root: data/processed/sen1floods11
   s1_subdir: S1Hand
   label_subdir: LabelHand
   split_dir: data/splits/official
