@@ -1,0 +1,19 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [master]
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - run: pip install pydantic pyyaml
+      - name: Validate config
+        run: PYTHONPATH=src python -m utils.config config/default.yaml
+      - name: Compile all source
+        run: PYTHONPATH=src python -m compileall -q src
