@@ -20,8 +20,7 @@ def build_vh(image: np.ndarray) -> np.ndarray:
 def build_ratio(image: np.ndarray) -> np.ndarray:
     vv = image[0].astype(np.float32)
     vh = image[1].astype(np.float32)
-    epsilon: float = 1e-8
-    return vv / (vh + epsilon)
+    return vv - vh
 
 
 
