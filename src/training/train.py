@@ -1,28 +1,61 @@
-from __future__ import annotations
-
 import argparse
 
-from utils.config import load_config
+import pytorch_lightning as pl
+import torch
+from pytorch_lightning.callbacks import ModelCheckpoint
+from pytorch_lightning.loggers import MLFlowLogger
+
+from data.datamodule import FloodDataModule
+from training.lightning_module import FloodModel
+from utils.config import Config, load_config
+from utils.mlflow_utils import git_sha
+
+
+def build_trainer(cfg: Config) -> pl.Trainer:
+    gpu = cfg.training.device == "cuda" and torch.cuda.is_available()
+    accel = "gpu" if gpu else "cpu"
+    precision = cfg.training.precision if gpu else "32-true"
+
+    logger = MLFlowLogger(
+        experiment_name=cfg.mlflow.experiment,
+        tracking_uri=cfg.mlflow.tracking_uri,
+        log_model=True,
+    )
+    logger.experiment.set_tag(logger.run_id, "git_sha", git_sha())
+    logger.log_hyperparams(cfg.model_dump())
+
+    ckpt = ModelCheckpoint(
+        dirpath=cfg.training.checkpoint_dir,
+        filename="best",
+        monitor="val_iou",
+        mode="max",
+        save_last=True,
+    )
+    return pl.Trainer(
+        accelerator=accel,
+        devices=1,
+        precision=precision,
+        accumulate_grad_batches=cfg.training.accumulate_grad_batches,
+        max_epochs=cfg.training.epochs,
+        logger=logger,
+        callbacks=[ckpt],
+        log_every_n_steps=10,
+    )
 
 
 def main() -> None:
-    ap = argparse.ArgumentParser(description="Train flood water segmentation baseline")
+    ap = argparse.ArgumentParser()
     ap.add_argument("--config", default="config/default.yaml")
-    ap.add_argument("--smoke", action="store_true")
+    ap.add_argument("--resume", default=None)
     args = ap.parse_args()
 
     cfg = load_config(args.config)
-    eff_batch = cfg.training.batch_size * cfg.training.accumulate_grad_batches
-    mode = "SMOKE" if args.smoke else "FULL"
+    pl.seed_everything(cfg.seed, workers=True)
 
-    print(f"[train:{mode}] config OK")
-    print(f"  arch       : {cfg.model.arch} / {cfg.model.backbone} (pretrained={cfg.model.pretrained})")
-    print(f"  in/out     : {cfg.model.in_channels} ch -> {cfg.model.out_classes} logit")
-    print(f"  batch      : {cfg.training.batch_size} x accum {cfg.training.accumulate_grad_batches} = {eff_batch}")
-    print(f"  precision  : {cfg.training.precision}")
-    print(f"  loss / lr  : {cfg.training.loss} / {cfg.training.lr}")
-    print(f"  mlflow     : {cfg.mlflow.tracking_uri} ({cfg.mlflow.experiment})")
-    print("[train] harness not implemented (task C3)")
+    dm = FloodDataModule(cfg)
+    model = FloodModel(cfg)
+    trainer = build_trainer(cfg)
+    trainer.fit(model, datamodule=dm, ckpt_path=args.resume)
 
 
 if __name__ == "__main__":
