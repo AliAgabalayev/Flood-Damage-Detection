@@ -23,6 +23,7 @@ class DataConfig(_Base):
     vv_clip: ClipRange
     vh_clip: ClipRange
     ratio_clip: ClipRange
+    augment: bool = True
 
     @model_validator(mode="after")
     def _check_clips(self) -> "DataConfig":

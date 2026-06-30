@@ -146,10 +146,9 @@ class FloodDataModule(pl.LightningDataModule):
         super().__init__()
         self.config: Config = config
 
-        self._train_transforms = (
-            train_transforms if train_transforms is not None
-            else build_train_transforms(config.data.image_size)
-        )
+        self._train_transforms = train_transforms
+        if self._train_transforms is None and config.data.augment:
+            self._train_transforms = build_train_transforms(config.data.image_size)
         self._val_transforms = (
             val_transforms if val_transforms is not None
             else build_val_transforms()

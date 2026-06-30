@@ -10,6 +10,7 @@ data:
   vv_clip: [-25.0, 0.0]    # all 446 chips: p1=-24.30, p99=-2.40
   vh_clip: [-35.0, 0.0]    # all 446 chips: p1=-34.48, p99=-9.54
   ratio_clip: [0.0, 18.0]  # all 446 chips: p1=-0.36,  p99=17.33
+  augment: true
 
 model:
   arch: deeplabv3plus
