@@ -55,7 +55,8 @@ class Preprocessor:
         lo, hi = clip_range
         clipped = np.clip(plane, lo, hi)
         span = hi - lo if (hi - lo) != 0.0 else 1.0
-        return ((clipped - lo) / span).astype(np.float32)
+        scaled = np.nan_to_num((clipped - lo) / span, nan=0.0, posinf=1.0, neginf=0.0)
+        return scaled.astype(np.float32)
 
 
 
