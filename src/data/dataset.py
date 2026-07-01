@@ -138,7 +138,8 @@ class Sen1FloodDataset(Dataset):
         channels: np.ndarray = self._preprocessor(raw_image)
 
         # Valid mask + label clean-up
-        valid_mask_np: np.ndarray = _create_valid_mask(raw_label)
+        img_finite: np.ndarray = np.isfinite(raw_image).all(axis=0)
+        valid_mask_np: np.ndarray = _create_valid_mask(raw_label) & img_finite
         clean_label: np.ndarray = np.where(
             valid_mask_np, raw_label, 0
         ).astype(np.int64)

@@ -232,6 +232,7 @@ class FloodDataModule(pl.LightningDataModule):
             drop_last=False,
             pin_memory=True,
             persistent_workers=self.config.data.num_workers > 0,
+            multiprocessing_context="spawn" if self.config.data.num_workers > 0 else None,
         )
 
    
