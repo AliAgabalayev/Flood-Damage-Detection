@@ -1,0 +1,67 @@
+[
+  {
+    "id": "sylhet",
+    "name": "Sylhet, Bangladesh",
+    "center": [24.8949, 91.8687],
+    "bounds": [[24.7, 91.7], [25.1, 92.1]],
+    "scene_date": "2026-06-22",
+    "model": "deeplabv3plus",
+    "flooded_area_km2": 18.4,
+    "flooded_pct": 6.2,
+    "mask_url": null,
+    "sar_url": null,
+    "geotiff_url": null
+  },
+  {
+    "id": "mekong",
+    "name": "Mekong Delta, Vietnam",
+    "center": [10.0341, 105.7878],
+    "bounds": [[9.8, 105.5], [10.3, 106.1]],
+    "scene_date": "2026-06-20",
+    "model": "deeplabv3plus",
+    "flooded_area_km2": 31.7,
+    "flooded_pct": 11.4,
+    "mask_url": null,
+    "sar_url": null,
+    "geotiff_url": null
+  },
+  {
+    "id": "nigeria",
+    "name": "N. Nigeria",
+    "center": [12.0022, 8.5919],
+    "bounds": [[11.8, 8.3], [12.2, 8.9]],
+    "scene_date": "2026-06-18",
+    "model": "deeplabv3plus",
+    "flooded_area_km2": 9.2,
+    "flooded_pct": 3.1,
+    "mask_url": null,
+    "sar_url": null,
+    "geotiff_url": null
+  },
+  {
+    "id": "kosi",
+    "name": "Kosi River, India",
+    "center": [26.4833, 87.0167],
+    "bounds": [[26.2, 86.7], [26.8, 87.3]],
+    "scene_date": "2026-06-15",
+    "model": "deeplabv3plus",
+    "flooded_area_km2": 22.1,
+    "flooded_pct": 7.8,
+    "mask_url": null,
+    "sar_url": null,
+    "geotiff_url": null
+  },
+  {
+    "id": "southsudan",
+    "name": "South Sudan",
+    "center": [7.8626, 30.2176],
+    "bounds": [[7.6, 29.9], [8.1, 30.6]],
+    "scene_date": "2026-06-10",
+    "model": "deeplabv3plus",
+    "flooded_area_km2": 44.8,
+    "flooded_pct": 15.9,
+    "mask_url": null,
+    "sar_url": null,
+    "geotiff_url": null
+  }
+]
