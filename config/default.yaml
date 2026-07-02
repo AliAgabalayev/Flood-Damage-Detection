@@ -1,27 +1,45 @@
-# Default configuration for flood damage segmentation.
+seed: 42
 
 data:
-  raw_dir: data/raw
-  processed_dir: data/processed
-  image_size: 512       # patch size after tiling/resizing
-  num_classes: 2        # e.g. background / flooded (adjust as needed)
-  val_split: 0.2
+  root: data/processed/sen1floods11
+  s1_subdir: S1Hand
+  label_subdir: LabelHand
+  split_dir: data/splits/official
+  image_size: 512
+  num_workers: 4
+  vv_clip: [-25.0, 0.0]    # all 446 chips: p1=-24.30, p99=-2.40
+  vh_clip: [-35.0, 0.0]    # all 446 chips: p1=-34.48, p99=-9.54
+  ratio_clip: [0.0, 18.0]  # all 446 chips: p1=-0.36,  p99=17.33
+  augment: true
 
 model:
-  arch: unet            # unet | deeplabv3 | ...
+  arch: deeplabv3plus
   backbone: resnet34
   pretrained: true
+  in_channels: 3
+  out_classes: 1
 
 training:
-  batch_size: 8
+  batch_size: 2
+  accumulate_grad_batches: 4
+  precision: 16-mixed
   epochs: 50
   lr: 0.0003
   optimizer: adam
-  loss: dice_bce        # dice | bce | focal | dice_bce
-  device: cuda          # cuda | cpu
-  num_workers: 4
+  loss: dice_bce
+  pos_weight: 8.4           # exact: 90,277,709 no-flood / 10,705,605 flood = 8.43x
+  device: cuda
   checkpoint_dir: models
 
+mlflow:
+  tracking_uri: sqlite:///mlflow.db
+  artifact_location: mlruns
+  experiment: flood-water-seg
+
 inference:
-  checkpoint: models/best.pth
+  checkpoint: models/best.ckpt
   threshold: 0.5
+  tile_size: 512
+  tile_overlap: 64
+
+  

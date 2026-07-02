@@ -1,8 +1,35 @@
 # Flood Damage Detection
 
-End-to-end **semantic segmentation** pipeline for detecting flood damage in
-aerial/satellite imagery, built with **PyTorch** (U-Net / DeepLab-style models
-producing pixel-level flooded/damaged masks).
+End-to-end **binary flood-water semantic segmentation** from **Sentinel-1 SAR**
+(Sen1Floods11), built with **PyTorch Lightning + segmentation-models-pytorch**.
+Input is 3-channel SAR (VV, VH, VV−VH ratio); architectures (U-Net, DeepLabV3+,
+YOLO-seg) are compared on the same data contract and scorer.
+
+## Decisions (locked)
+S1-only 3-channel · binary · 512×512 · Lightning+smp · MLflow · DVC ·
+yaml+pydantic config · local GPU (RTX 3060 6GB → bs=2, accum=4, 16-mixed).
+See [DATA_CONTRACT.md](DATA_CONTRACT.md).
+
+## Where to start (team)
+This repo currently holds the **plan and the frozen interfaces**, not the
+implementation yet — code is built per the task board.
+
+Planning docs (task board, decision log, data contract) are kept outside the
+repo in `~/Downloads/flood-docs/`. Locked hyperparameters / paths live in
+[config/default.yaml](config/default.yaml).
+
+```bash
+source .venv/bin/activate && pip install -r requirements.txt
+export PYTHONPATH=.
+```
+
+## Target CLI (to be implemented under the tasks)
+```bash
+python -m src.training.train     --config config/default.yaml
+python -m src.inference.evaluate --config config/default.yaml --checkpoint models/best.ckpt
+python -m src.inference.predict  --config config/default.yaml --input scene_S1.tif --output flood_mask.tif
+mlflow ui --backend-store-uri sqlite:///experiments/mlflow.db
+```
 
 ## Project structure
 

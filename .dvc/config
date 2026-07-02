@@ -1,0 +1,6 @@
+[cache]
+    type = "reflink,hardlink,symlink,copy"
+[core]
+    remote = localremote
+['remote "localremote"']
+    url = /home/aliagabalayev/Desktop/Workspace/.dvc-remote-flood

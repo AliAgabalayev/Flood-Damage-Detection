@@ -1,11 +1,34 @@
-torch
-torchvision
-albumentations
-numpy
-pillow
-opencv-python
-pyyaml
-tqdm
-matplotlib
-scikit-learn
-tensorboard
+# Flood water segmentation — pinned to the working env (Python 3.13).
+# Reproducible: `python -m venv .venv && pip install -r requirements.txt`.
+
+# --- Core DL / segmentation ---
+torch==2.12.1
+torchvision==0.27.1
+pytorch-lightning==2.6.5
+torchmetrics==1.9.0
+segmentation_models_pytorch==0.5.0
+
+# --- Geospatial / SAR I/O ---
+rasterio==1.5.0
+gsutil==5.37          # Sen1Floods11 GCS downloader (scripts/download_data.sh)
+
+# --- Data / augmentation ---
+numpy==2.5.0
+pillow==12.2.0
+opencv-python==4.13.0.92
+albumentations==2.0.8
+
+# --- Config / tracking / versioning ---
+pydantic==2.13.4      # typed config validation (src/utils/config.py)
+PyYAML==6.0.3
+mlflow==3.14.0        # experiment tracking (sqlite backend)
+dvc==3.67.1           # data + model versioning
+
+# --- Comparison track: YOLO-seg (Phase 4 / M5) ---
+ultralytics==8.4.76
+
+# --- EDA / metrics / misc ---
+matplotlib==3.11.0
+scikit-learn==1.9.0
+tensorboard==2.20.0
+tqdm==4.68.3

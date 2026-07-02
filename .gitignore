@@ -6,6 +6,11 @@ models/*
 *.pt
 *.ckpt
 !**/.gitkeep
+!**/*.dvc
+
+# Experiment tracking (MLflow sqlite backend + local artifacts)
+mlflow.db
+mlruns/
 
 # Python
 __pycache__/
@@ -27,6 +32,12 @@ env/
 runs/
 logs/
 *.log
+
+# Experiment tracking (MLflow) & data splits artifacts
+experiments/
+mlruns/
+*.db
+data/splits/*.csv
 
 # OS / editor
 .DS_Store
