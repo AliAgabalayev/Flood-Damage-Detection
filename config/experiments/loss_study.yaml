@@ -39,3 +39,26 @@ runs:
   # --- Combined loss at the dataset ratio (BCE stability + Dice overlap) ---
   - name: dice_bce_pw8.4
     training: {loss: dice_bce, pos_weight: 8.4, bce_weight: 1.0, dice_weight: 1.0}
+
+  # === Phase 2 — extend the winning overlap family ===============================
+  # Motivated by phase-1: overlap losses (dice) won, so push that family with an
+  # imbalance dial (Tversky) and a metric-aligned loss (Lovasz). Same 40-epoch +
+  # early-stopping schedule and seed as phase 1, so numbers are directly
+  # comparable. Re-running the sweep skips the 7 phase-1 rows already in
+  # results.csv and trains only these.
+
+  # Tversky: beta > alpha penalises missed flood pixels more -> higher recall.
+  - name: tversky_a0.3_b0.7
+    training: {loss: tversky, pos_weight: null, tversky_alpha: 0.3, tversky_beta: 0.7}
+
+  # Focal-Tversky: same asymmetry + focusing exponent on hard regions.
+  - name: focal_tversky_g1.33
+    training: {loss: focal_tversky, pos_weight: null, tversky_alpha: 0.3, tversky_beta: 0.7, tversky_gamma: 1.33}
+
+  # Lovasz: direct differentiable surrogate for IoU (our primary metric).
+  - name: lovasz
+    training: {loss: lovasz, pos_weight: null}
+
+  # Dice + Focal: pair the winning overlap loss with hard-pixel mining.
+  - name: dice_focal
+    training: {loss: dice_focal, pos_weight: null, dice_weight: 1.0, focal_alpha: 0.25, focal_gamma: 2.0}

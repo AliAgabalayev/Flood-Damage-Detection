@@ -49,16 +49,25 @@ class TrainingConfig(_Base):
     epochs: int = Field(50, gt=0)
     lr: float = Field(3e-4, gt=0)
     optimizer: Literal["adam", "adamw", "sgd"] = "adam"
-    loss: Literal["dice", "bce", "dice_bce", "focal"] = "dice_bce"
+    loss: Literal[
+        "dice", "bce", "dice_bce", "focal",
+        "tversky", "focal_tversky", "lovasz", "dice_focal",
+    ] = "dice_bce"
     pos_weight: Optional[float] = None
-    # dice_bce is a weighted sum: bce_weight * BCE + dice_weight * Dice.
-    # Defaults (1.0, 1.0) reproduce a plain unweighted sum.
+    # dice_bce / dice_focal are weighted sums: bce_weight/dice_weight scale the
+    # BCE and Dice terms. Defaults (1.0, 1.0) reproduce a plain unweighted sum.
     bce_weight: float = Field(1.0, ge=0.0)
     dice_weight: float = Field(1.0, ge=0.0)
-    # Focal loss imbalance controls (only used when loss == "focal").
+    # Focal loss imbalance controls (used by "focal" and "dice_focal").
     # alpha is the positive-class prior weight; gamma is the focusing strength.
     focal_alpha: Optional[float] = Field(0.25, ge=0.0, le=1.0)
     focal_gamma: float = Field(2.0, ge=0.0)
+    # Tversky controls (used by "tversky" and "focal_tversky"). alpha penalises
+    # false positives, beta false negatives; beta > alpha boosts flood recall.
+    # tversky_gamma > 1 turns it into Focal-Tversky (focuses on hard regions).
+    tversky_alpha: float = Field(0.3, ge=0.0, le=1.0)
+    tversky_beta: float = Field(0.7, ge=0.0, le=1.0)
+    tversky_gamma: float = Field(1.0, ge=0.0)
     # Optional early stopping on val_iou (patience in epochs). None disables it.
     early_stopping_patience: Optional[int] = Field(None, gt=0)
     device: Literal["cuda", "cpu"] = "cuda"
