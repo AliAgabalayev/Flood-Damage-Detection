@@ -34,7 +34,8 @@ logs/
 *.log
 
 # Experiment tracking (MLflow) & data splits artifacts
-experiments/
+# Anchored to repo root so it only ignores the results dir, NOT config/experiments/.
+/experiments/
 mlruns/
 *.db
 data/splits/*.csv

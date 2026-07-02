@@ -51,6 +51,16 @@ class TrainingConfig(_Base):
     optimizer: Literal["adam", "adamw", "sgd"] = "adam"
     loss: Literal["dice", "bce", "dice_bce", "focal"] = "dice_bce"
     pos_weight: Optional[float] = None
+    # dice_bce is a weighted sum: bce_weight * BCE + dice_weight * Dice.
+    # Defaults (1.0, 1.0) reproduce a plain unweighted sum.
+    bce_weight: float = Field(1.0, ge=0.0)
+    dice_weight: float = Field(1.0, ge=0.0)
+    # Focal loss imbalance controls (only used when loss == "focal").
+    # alpha is the positive-class prior weight; gamma is the focusing strength.
+    focal_alpha: Optional[float] = Field(0.25, ge=0.0, le=1.0)
+    focal_gamma: float = Field(2.0, ge=0.0)
+    # Optional early stopping on val_iou (patience in epochs). None disables it.
+    early_stopping_patience: Optional[int] = Field(None, gt=0)
     device: Literal["cuda", "cpu"] = "cuda"
     checkpoint_dir: str = "models"
 
