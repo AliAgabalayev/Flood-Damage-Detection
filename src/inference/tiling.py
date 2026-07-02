@@ -76,9 +76,9 @@ def generate_tiles(
             col_end = min(c + tile_size, scene_W)
 
             crop = raw_scene[:, r:row_end, c:col_end]   
-            crop = _pad_tile(crop, tile_size)
 
             processed: np.ndarray = preprocessor(crop)
+            processed = _pad_tile(processed, tile_size)
 
             tile_tensor: Tensor = torch.from_numpy(processed).float()
 
