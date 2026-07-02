@@ -1,0 +1,64 @@
+# M1 — Loss & class-imbalance study matrix.
+#
+# Model / data / seed are held fixed (from base_config); only the loss and its
+# imbalance knobs change per run. pos_weight only affects the BCE term, so it is
+# only swept for `bce` and applied at the dataset ratio (8.4) for `dice_bce`.
+# `dice` and `focal` do not use pos_weight (focal uses alpha instead).
+#
+# Lean matrix = 7 runs. Run with:  python scripts/run_loss_study.py
+
+base_config: config/default.yaml
+
+# Applied to EVERY run. Shorter than the 50-epoch production schedule so the
+# whole sweep fits comfortably in a single Colab GPU session; early stopping on
+# val_iou trims runs that have plateaued. Bump epochs back up for a final run.
+overrides:
+  training:
+    epochs: 40
+    early_stopping_patience: 8
+
+runs:
+  # --- BCE with a pos_weight sweep (the imbalance-tuning axis) ---
+  - name: bce_pw1
+    training: {loss: bce, pos_weight: 1.0}      # no re-weighting (baseline)
+  - name: bce_pw4
+    training: {loss: bce, pos_weight: 4.0}      # partial re-weighting
+  - name: bce_pw8.4
+    training: {loss: bce, pos_weight: 8.4}      # exact neg/pos ratio
+  - name: bce_pw13
+    training: {loss: bce, pos_weight: 13.0}     # over-weighting positives
+
+  # --- Region-overlap loss (intrinsically imbalance-robust, no pos_weight) ---
+  - name: dice
+    training: {loss: dice, pos_weight: null}
+
+  # --- Focal loss (imbalance handled via alpha/gamma, not pos_weight) ---
+  - name: focal_a0.25
+    training: {loss: focal, pos_weight: null, focal_alpha: 0.25, focal_gamma: 2.0}
+
+  # --- Combined loss at the dataset ratio (BCE stability + Dice overlap) ---
+  - name: dice_bce_pw8.4
+    training: {loss: dice_bce, pos_weight: 8.4, bce_weight: 1.0, dice_weight: 1.0}
+
+  # === Phase 2 — extend the winning overlap family ===============================
+  # Motivated by phase-1: overlap losses (dice) won, so push that family with an
+  # imbalance dial (Tversky) and a metric-aligned loss (Lovasz). Same 40-epoch +
+  # early-stopping schedule and seed as phase 1, so numbers are directly
+  # comparable. Re-running the sweep skips the 7 phase-1 rows already in
+  # results.csv and trains only these.
+
+  # Tversky: beta > alpha penalises missed flood pixels more -> higher recall.
+  - name: tversky_a0.3_b0.7
+    training: {loss: tversky, pos_weight: null, tversky_alpha: 0.3, tversky_beta: 0.7}
+
+  # Focal-Tversky: same asymmetry + focusing exponent on hard regions.
+  - name: focal_tversky_g1.33
+    training: {loss: focal_tversky, pos_weight: null, tversky_alpha: 0.3, tversky_beta: 0.7, tversky_gamma: 1.33}
+
+  # Lovasz: direct differentiable surrogate for IoU (our primary metric).
+  - name: lovasz
+    training: {loss: lovasz, pos_weight: null}
+
+  # Dice + Focal: pair the winning overlap loss with hard-pixel mining.
+  - name: dice_focal
+    training: {loss: dice_focal, pos_weight: null, dice_weight: 1.0, focal_alpha: 0.25, focal_gamma: 2.0}
