@@ -21,8 +21,10 @@ def _compute_starts(total: int, tile_size: int, overlap: int) -> List[int]:
     #Return the top-left offsets for a 1-D tiling with overlap
 
     stride = tile_size - overlap
-    starts: List[int] = list(range(0, total, stride))
+    starts: List[int] = [s for s in range(0, total, stride) if s + tile_size < total]
 
+    if not starts or starts[0] != 0:
+        starts.insert(0, 0)
     last = total - tile_size
     if last > 0 and starts[-1] != last:
         starts.append(last)
