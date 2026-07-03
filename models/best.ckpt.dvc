@@ -1,5 +1,5 @@
 outs:
-- md5: ad95e2707060c7f0dd0dfecaa6e1e410
-  size: 269556029
+- md5: 6ad018cdece32967656170e1bc36a222
+  size: 320659713
   hash: md5
   path: best.ckpt

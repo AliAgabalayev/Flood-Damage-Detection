@@ -14,7 +14,7 @@ data:
 
 model:
   arch: deeplabv3plus
-  backbone: resnet34
+  backbone: resnet50
   pretrained: true
   in_channels: 3
   out_classes: 1
@@ -26,8 +26,8 @@ training:
   epochs: 50
   lr: 0.0003
   optimizer: adam
-  loss: dice_bce
-  pos_weight: 8.4           # exact: 90,277,709 no-flood / 10,705,605 flood = 8.43x
+  loss: dice
+  pos_weight: null
   device: cuda
   checkpoint_dir: models
 
