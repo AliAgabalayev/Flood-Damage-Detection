@@ -6,28 +6,25 @@ from typing import List, NamedTuple, Tuple, Union
 import numpy as np
 import rasterio
 
-ArrayLike = Union[np.ndarray, "object"]  # numpy array or torch.Tensor
+ArrayLike = Union[np.ndarray, "object"]  # numpy array or torch tensor
 
 
 class MaskTile(NamedTuple):
-    # A single per-tile model output together with its top-left position in the
-    # scene grid. Positions come straight from the ``TileRecord``s produced by
-    # ``generate_tiles`` so tiling and stitching share one coordinate system.
+    # one model output mask plus where it sits in the scene
 
-    mask: ArrayLike       # (H, W) water probabilities in [0, 1], H/W <= tile_size
+    mask: ArrayLike       # (H, W) probabilities in [0, 1]
     row_start: int
     col_start: int
 
 
 def _to_2d_numpy(mask: ArrayLike) -> np.ndarray:
-    # Accept a torch.Tensor or ndarray and return a 2-D (H, W) float array.
-    # Model outputs are typically (1, H, W) or (1, 1, H, W); drop leading axes.
+    # turn a tensor/array into a plain 2-D (H, W) array
 
-    if hasattr(mask, "detach"):          # torch.Tensor
+    if hasattr(mask, "detach"):          # torch tensor
         mask = mask.detach().cpu().numpy()
     array = np.asarray(mask, dtype=np.float32)
 
-    while array.ndim > 2 and array.shape[0] == 1:
+    while array.ndim > 2 and array.shape[0] == 1:  # drop extra front axes
         array = array[0]
     if array.ndim != 2:
         raise ValueError(
@@ -37,9 +34,8 @@ def _to_2d_numpy(mask: ArrayLike) -> np.ndarray:
 
 
 def _feather_window(h: int, w: int) -> np.ndarray:
-    # Distance-to-edge weights: 1 along the border, rising toward the centre.
-    # Overlapping tiles are averaged with these weights so seams fade out
-    # smoothly, and because every weight is >= 1 the blend never divides by zero.
+    # weights that are small at the edges and big in the middle,
+    # so overlapping tiles blend without a hard seam
 
     rows = np.minimum(np.arange(1, h + 1), np.arange(h, 0, -1))
     cols = np.minimum(np.arange(1, w + 1), np.arange(w, 0, -1))
@@ -50,8 +46,7 @@ def stitch_tiles(
     mask_tiles: List[MaskTile],
     scene_shape: Tuple[int, int],
 ) -> np.ndarray:
-    # Place per-tile masks back by position and blend overlaps with a feathered
-    # weighted average, returning a full-scene probability map in [0, 1].
+    # put all tiles back together into one full probability map
 
     if not mask_tiles:
         raise ValueError("mask_tiles is empty; nothing to stitch.")
@@ -64,7 +59,7 @@ def stitch_tiles(
         mask = _to_2d_numpy(record.mask)
         r, c = record.row_start, record.col_start
 
-        # Trim any edge padding so only the in-bounds region is written back.
+        # cut off any padding so we stay inside the scene
         h = min(mask.shape[0], scene_H - r)
         w = min(mask.shape[1], scene_W - c)
         if h <= 0 or w <= 0:
@@ -72,6 +67,7 @@ def stitch_tiles(
         mask = mask[:h, :w]
         window = _feather_window(h, w)
 
+        # add up masks and weights, then divide -> weighted average
         accum[r:r + h, c:c + w] += mask * window
         weights[r:r + h, c:c + w] += window
 
@@ -81,7 +77,7 @@ def stitch_tiles(
 
 
 def binarize(prob_map: np.ndarray, threshold: float = 0.5) -> np.ndarray:
-    # Threshold a probability map into a {0, 1} uint8 water mask.
+    # 0/1 mask: 1 where probability is above the threshold
 
     if not (0.0 <= threshold <= 1.0):
         raise ValueError(f"threshold must be in [0, 1] but got {threshold}.")
@@ -93,8 +89,7 @@ def write_geotiff(
     scene_path: Union[Path, str],
     out_path: Union[Path, str],
 ) -> Path:
-    # Write a single-band mask as a georeferenced GeoTIFF, copying the CRS and
-    # affine transform from the source scene so the mask overlays it exactly.
+    # save the mask as a GeoTIFF, reusing the scene's CRS + transform
 
     if mask.ndim != 2:
         raise ValueError(
@@ -102,7 +97,7 @@ def write_geotiff(
         )
 
     scene_path = Path(scene_path)
-    with rasterio.open(scene_path) as src:
+    with rasterio.open(scene_path) as src:  # copy the geo info from the scene
         profile = src.profile.copy()
         scene_hw = (src.height, src.width)
 
@@ -123,8 +118,7 @@ def write_geotiff(
 
 
 def verify_overlay(mask_path: Union[Path, str], scene_path: Union[Path, str]) -> bool:
-    # Confirm the written mask overlays the source scene: same CRS, transform
-    # and pixel grid. Raises with a precise diff on mismatch, else returns True.
+    # check the saved mask lines up with the scene (same CRS, transform, size)
 
     with rasterio.open(mask_path) as m, rasterio.open(scene_path) as s:
         problems: List[str] = []
