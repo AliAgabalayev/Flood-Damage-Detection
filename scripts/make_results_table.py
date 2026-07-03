@@ -1,8 +1,10 @@
-"""Turn the loss-study results CSV into a ranked Markdown table.
+"""Turn a loss-study MLflow experiment into a ranked Markdown table.
 
 Prints the table to stdout and, if --update-report is passed, splices it into
 docs/loss_study.md between the RESULTS markers so the report stays in sync with
-the latest sweep.
+the latest sweep. MLflow (not a CSV) is the source of truth: the experiment
+name is derived from the matrix filename, the same way run_loss_study.py
+derives it when logging runs.
 
 Usage
 -----
@@ -12,64 +14,55 @@ Usage
 from __future__ import annotations
 
 import argparse
-import csv
 import math
+import sys
 from pathlib import Path
 
+import yaml
+
 ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(ROOT / "src"))
+
+from utils.mlflow_utils import compare_runs, study_experiment  # noqa: E402
 
 START = "<!-- RESULTS:START -->"
 END = "<!-- RESULTS:END -->"
 
 COLUMNS = [
-    ("run_name", "Run"),
-    ("loss", "Loss"),
-    ("pos_weight", "pos_weight"),
-    ("focal_alpha", "focal_α"),
-    ("best_val_iou", "Val IoU"),
-    ("best_val_f1", "Val F1"),
-    ("best_epoch", "Best epoch"),
-    ("train_seconds", "Time (s)"),
+    ("tags.mlflow.runName", "Run"),
+    ("params.training/loss", "Loss"),
+    ("params.training/pos_weight", "pos_weight"),
+    ("params.training/focal_alpha", "focal_α"),
+    ("metrics.best_val_iou", "Val IoU"),
+    ("metrics.best_val_f1", "Val F1"),
+    ("metrics.best_epoch", "Best epoch"),
+    ("metrics.train_seconds", "Time (s)"),
 ]
 
 
-def _fmt(key: str, value: str) -> str:
-    if value is None or value == "" or value == "None":
+def _fmt(key: str, value: object) -> str:
+    if value is None or value in ("", "None") or (isinstance(value, float) and math.isnan(value)):
         return "—"
-    if key in ("best_val_iou", "best_val_f1"):
-        try:
-            return f"{float(value):.4f}"
-        except ValueError:
-            return value
-    return value
+    if key in ("metrics.best_val_iou", "metrics.best_val_f1"):
+        return f"{float(value):.4f}"
+    if key == "metrics.best_epoch":
+        return str(int(float(value)))
+    return str(value)
 
 
-def load_rows(csv_path: Path) -> list[dict[str, str]]:
-    with csv_path.open("r", newline="", encoding="utf-8") as f:
-        rows = list(csv.DictReader(f))
-
-    def sort_key(r: dict[str, str]) -> float:
-        try:
-            v = float(r.get("best_val_iou", "nan"))
-        except ValueError:
-            v = float("nan")
-        return -1.0 if math.isnan(v) else v
-
-    return sorted(rows, key=sort_key, reverse=True)
-
-
-def build_table(rows: list[dict[str, str]]) -> str:
-    if not rows:
+def build_table(df) -> str:
+    if df.empty:
         return "_No results yet — run `python scripts/run_loss_study.py` first._"
 
     header = "| " + " | ".join(label for _, label in COLUMNS) + " |"
     sep = "| " + " | ".join("---" for _ in COLUMNS) + " |"
     lines = [header, sep]
-    best_iou = rows[0].get("best_val_iou")
-    for r in rows:
-        cells = [_fmt(key, r.get(key, "")) for key, _ in COLUMNS]
-        # Bold the winning run.
-        if r.get("best_val_iou") == best_iou:
+    best_iou = df.iloc[0].get("metrics.best_val_iou")
+    for _, row in df.iterrows():
+        cells = [_fmt(key, row.get(key)) for key, _ in COLUMNS]
+        if row.get("params.training/loss") != "focal":
+            cells[3] = "—"
+        if row.get("metrics.best_val_iou") == best_iou:
             cells[0] = f"**{cells[0]}**"
         lines.append("| " + " | ".join(cells) + " |")
     return "\n".join(lines)
@@ -90,21 +83,27 @@ def update_report(report_path: Path, table: str) -> bool:
 
 def main() -> None:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--csv", default="experiments/loss_study/results.csv")
+    ap.add_argument("--matrix", default="config/experiments/loss_study.yaml")
     ap.add_argument("--report", default="docs/loss_study.md")
     ap.add_argument("--update-report", action="store_true")
     args = ap.parse_args()
 
-    csv_path = (ROOT / args.csv) if not Path(args.csv).is_absolute() else Path(args.csv)
-    if not csv_path.exists():
-        print(f"No results CSV at {csv_path}. Run the sweep first.")
-        return
+    matrix_path = (ROOT / args.matrix) if not Path(args.matrix).is_absolute() else Path(args.matrix)
+    matrix = yaml.safe_load(matrix_path.read_text())
+    base_raw = yaml.safe_load((ROOT / matrix["base_config"]).read_text())
+    base_mlflow = base_raw.get("mlflow", {})
+    tracking_uri = base_mlflow.get("tracking_uri", "sqlite:///mlflow.db")
+    experiment_name = study_experiment(base_mlflow.get("experiment", "flood-water-seg"), matrix_path.stem)
 
-    rows = load_rows(csv_path)
-    table = build_table(rows)
+    df = compare_runs(tracking_uri, experiment_name, metric="best_val_iou")
+    table = build_table(df)
     print(table)
+    print(f"\n(from MLflow experiment: {experiment_name})")
 
     if args.update_report:
+        if df.empty:
+            print("\nRefusing to overwrite the report: no MLflow results found for this experiment.")
+            return
         report_path = (ROOT / args.report) if not Path(args.report).is_absolute() else Path(args.report)
         ok = update_report(report_path, table)
         print(f"\n{'Updated' if ok else 'Could not update'} {report_path}")

@@ -1,13 +1,11 @@
 from __future__ import annotations
 
 import subprocess
-from contextlib import contextmanager
 from pathlib import Path
-from typing import Any, Iterator, Optional
 
 import mlflow
-
-from utils.config import Config
+import pandas as pd
+import yaml
 
 
 def git_sha(short: bool = False) -> str:
@@ -22,53 +20,42 @@ def git_sha(short: bool = False) -> str:
         return "unknown"
 
 
-def _flatten(d: dict[str, Any], prefix: str = "") -> dict[str, Any]:
-    out: dict[str, Any] = {}
-    for k, v in d.items():
-        key = f"{prefix}{k}"
-        if isinstance(v, dict):
-            out.update(_flatten(v, f"{key}."))
-        else:
-            out[key] = v
-    return out
-
-
-def setup_mlflow(cfg: Config) -> str:
-    mlflow.set_tracking_uri(cfg.mlflow.tracking_uri)
-    exp = mlflow.get_experiment_by_name(cfg.mlflow.experiment)
-    if exp is not None:
-        return exp.experiment_id
-    artifact_location = Path(cfg.mlflow.artifact_location).resolve().as_uri()
-    return mlflow.create_experiment(cfg.mlflow.experiment, artifact_location=artifact_location)
-
-
-@contextmanager
-def mlflow_run(
-    cfg: Config,
-    run_name: Optional[str] = None,
-    extra_params: Optional[dict[str, Any]] = None,
-) -> Iterator[mlflow.ActiveRun]:
-    setup_mlflow(cfg)
-    mlflow.set_experiment(cfg.mlflow.experiment)
-    with mlflow.start_run(run_name=run_name) as run:
-        mlflow.log_params(_flatten(cfg.model_dump()))
-        mlflow.set_tag("git_sha", git_sha())
-        if extra_params:
-            mlflow.log_params(extra_params)
-        yield run
-
-
-def log_checkpoint(path: str | Path, artifact_path: str = "checkpoints") -> None:
-    p = Path(path)
+def dvc_data_hash(dvc_file: str | Path) -> str:
+    p = Path(dvc_file)
     if not p.exists():
-        raise FileNotFoundError(f"checkpoint not found: {p}")
-    mlflow.log_artifact(str(p), artifact_path=artifact_path)
+        return "unknown"
+    spec = yaml.safe_load(p.read_text())
+    outs = spec.get("outs") or []
+    return outs[0]["md5"] if outs else "unknown"
 
 
-def compare_runs(cfg: Config, metric: str = "val_iou", top: int = 20):
-    setup_mlflow(cfg)
-    exp = mlflow.get_experiment_by_name(cfg.mlflow.experiment)
-    if exp is None:
-        return None
-    order = f"metrics.{metric} DESC"
-    return mlflow.search_runs(experiment_ids=[exp.experiment_id], order_by=[order], max_results=top)
+def study_experiment(base_experiment: str, study_name: str) -> str:
+    return f"{base_experiment}/{study_name}"
+
+
+def resolve_experiment(tracking_uri: str, experiment_name: str) -> str | None:
+    mlflow.set_tracking_uri(tracking_uri)
+    exp = mlflow.get_experiment_by_name(experiment_name)
+    return exp.experiment_id if exp is not None else None
+
+
+def finished_run_names(tracking_uri: str, experiment_name: str) -> set[str]:
+    exp_id = resolve_experiment(tracking_uri, experiment_name)
+    if exp_id is None:
+        return set()
+    df = mlflow.search_runs([exp_id], filter_string="attributes.status = 'FINISHED'")
+    if df.empty or "tags.mlflow.runName" not in df.columns:
+        return set()
+    return set(df["tags.mlflow.runName"].dropna())
+
+
+def compare_runs(tracking_uri: str, experiment_name: str, metric: str = "best_val_iou", top: int = 50) -> pd.DataFrame:
+    exp_id = resolve_experiment(tracking_uri, experiment_name)
+    if exp_id is None:
+        return pd.DataFrame()
+    return mlflow.search_runs(
+        [exp_id],
+        filter_string="attributes.status = 'FINISHED'",
+        order_by=[f"metrics.{metric} DESC"],
+        max_results=top,
+    )

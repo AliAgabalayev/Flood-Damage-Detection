@@ -229,7 +229,7 @@ class FloodDataModule(pl.LightningDataModule):
             batch_size=self.config.training.batch_size,
             num_workers=self.config.data.num_workers,
             shuffle=shuffle,
-            drop_last=False,
+            drop_last=shuffle,
             pin_memory=True,
             persistent_workers=self.config.data.num_workers > 0,
             multiprocessing_context="spawn" if self.config.data.num_workers > 0 else None,
