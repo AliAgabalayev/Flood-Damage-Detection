@@ -1,0 +1,14 @@
+base_config: config/default.yaml
+
+overrides:
+  training:
+    epochs: 50
+    early_stopping_patience: null
+
+runs:
+  - name: tversky_a0.3_b0.7
+    training: {loss: tversky, pos_weight: null, tversky_alpha: 0.3, tversky_beta: 0.7}
+  - name: dice
+    training: {loss: dice, pos_weight: null}
+  - name: focal_tversky_g1.33
+    training: {loss: focal_tversky, pos_weight: null, tversky_alpha: 0.3, tversky_beta: 0.7, tversky_gamma: 1.33}

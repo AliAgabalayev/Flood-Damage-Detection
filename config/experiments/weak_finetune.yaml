@@ -7,9 +7,9 @@ data:
   split_dir: data/splits/official
   image_size: 512
   num_workers: 4
-  vv_clip: [-25.0, 0.0]    # all 446 chips: p1=-24.30, p99=-2.40
-  vh_clip: [-35.0, 0.0]    # all 446 chips: p1=-34.48, p99=-9.54
-  ratio_clip: [0.0, 18.0]  # all 446 chips: p1=-0.36,  p99=17.33
+  vv_clip: [-25.0, 0.0]
+  vh_clip: [-35.0, 0.0]
+  ratio_clip: [0.0, 18.0]
   augment: true
 
 model:
@@ -24,22 +24,21 @@ training:
   accumulate_grad_batches: 4
   precision: 16-mixed
   epochs: 50
-  lr: 0.0003
+  lr: 0.0001
   optimizer: adam
   loss: dice
   pos_weight: null
+  early_stopping_patience: null
   device: cuda
-  checkpoint_dir: models
+  checkpoint_dir: models/weak_pretrain_finetune/finetune
 
 mlflow:
   tracking_uri: sqlite:///mlflow.db
   artifact_location: mlruns
-  experiment: flood-water-seg
+  experiment: flood-water-seg/weak_pretrain_finetune
 
 inference:
-  checkpoint: models/best.ckpt
+  checkpoint: models/weak_pretrain_finetune/finetune/best.ckpt
   threshold: 0.5
   tile_size: 512
   tile_overlap: 64
-
-  
