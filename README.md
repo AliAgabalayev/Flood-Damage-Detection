@@ -1,9 +1,22 @@
 # Flood Damage Detection
 
+## Team: Gale
+
+## SAR-Based Flood Damage Detection Using Deep Learning
+
 End-to-end **binary flood-water semantic segmentation** from **Sentinel-1 SAR**
 (Sen1Floods11), built with **PyTorch Lightning + segmentation-models-pytorch**.
 Input is 3-channel SAR (VV, VH, VV−VH ratio); architectures (U-Net, DeepLabV3+,
 YOLO-seg) are compared on the same data contract and scorer.
+
+## Project Team
+
+| Team Member | Responsibilities |
+|:------------|:----------------|
+| **Ali Agabalazade** | Machine Learning Engineering, Model Training, Data Engineering, Documentation |
+| **Nigar Rustamova** | Training Optimization, Backend Development, Model Development |
+| **Isgandar Panahov** | Frontend Development, User Interface Design, Project Presentation |
+| **Jala Suleymanova** | Data Engineering, Data Pipeline Development, Documentation, Presentation |
 
 ## Decisions (locked)
 S1-only 3-channel · binary · 512×512 · Lightning+smp · MLflow · DVC ·
