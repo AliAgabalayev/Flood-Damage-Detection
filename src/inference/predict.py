@@ -67,8 +67,8 @@ def _run_tile_inference(
         for record in tiles:
             # Add batch dimension: (C, H, W) → (1, C, H, W)
             batch: Tensor = record.tile.unsqueeze(0).to(device)
-            logits: Tensor = model(batch)          
-            prob: Tensor = torch.sigmoid(logits)  
+            logits: Tensor = model(batch)
+            prob: Tensor = torch.sigmoid(logits)
             prob_2d: Tensor = prob.squeeze(0).squeeze(0)
             mask_tiles.append(
                 MaskTile(
@@ -85,8 +85,13 @@ def predict(
     output_path: Path,
     cfg: Config,
 ) -> Path:
+    if not scene_path.exists():
+        raise SystemExit(f"Input scene not found: {scene_path}")
+
     device = _select_device(cfg)
     logger.info("Using device: %s", device)
+
+    model = _load_model(cfg, device)
 
     preprocessor = default_preprocessor(cfg)
 
@@ -104,8 +109,6 @@ def predict(
         cfg.inference.tile_size,
         cfg.inference.tile_overlap,
     )
-    
-    model = _load_model(cfg, device)
 
     logger.info("Running inference over %d tile(s)…", len(tiles))
     mask_tiles = _run_tile_inference(model, tiles, device)
