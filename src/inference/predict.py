@@ -41,6 +41,12 @@ def _parse_args() -> argparse.Namespace:
         metavar="YAML",
         help="Path to the YAML configuration file (default: config/default.yaml).",
     )
+    ap.add_argument(
+        "--prob-output",
+        default=None,
+        metavar="PROB",
+        help="Optional destination path for a float32 flood-probability GeoTIFF.",
+    )
     return ap.parse_args()
 
 def _select_device(cfg: Config) -> str:
@@ -84,6 +90,7 @@ def predict(
     scene_path: Path,
     output_path: Path,
     cfg: Config,
+    prob_output_path: Path | None = None,
 ) -> Path:
     if not scene_path.exists():
         raise SystemExit(f"Input scene not found: {scene_path}")
@@ -128,6 +135,12 @@ def predict(
     out = write_geotiff(binary_mask, scene_path, output_path)
     verify_overlay(out, scene_path)
     logger.info("Mask written to: %s (CRS/transform verified against scene)", out)
+
+    if prob_output_path is not None:
+        prob_out = write_geotiff(prob_map, scene_path, prob_output_path, dtype="float32")
+        verify_overlay(prob_out, scene_path)
+        logger.info("Probability map written to: %s", prob_out)
+
     return out
 
 def main() -> None:
@@ -144,6 +157,7 @@ def main() -> None:
         scene_path=Path(args.input),
         output_path=Path(args.output),
         cfg=cfg,
+        prob_output_path=Path(args.prob_output) if args.prob_output else None,
     )
     print(f"Done. Flood mask saved to: {out}")
 
