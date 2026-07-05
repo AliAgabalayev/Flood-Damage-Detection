@@ -1,4 +1,4 @@
-    import Link from "next/link";
+import Link from "next/link";
 import { Location } from "@/types/location";
 import locationsData from "@/public/data/locations.json";
 import MapView from "./MapView";
@@ -59,8 +59,8 @@ export default async function LocationPage({ params }: { params: Promise<{ id: s
 
         {/* Topbar */}
         <header
-          className="h-12 flex items-center justify-between px-5 flex-shrink-0 border-b"
-          style={{ background: "#faf8f4", borderColor: "#e8e2d8" }}
+          className="h-12 flex items-center justify-between px-5 flex-shrink-0"
+          style={{ background: "#faf8f4", borderBottom: "1px solid #e8e2d8" }}
         >
           <div className="flex items-center gap-3">
             <Link href="/" className="text-xs transition-colors hover:opacity-70" style={{ color: "#9a8f7e" }}>
@@ -82,8 +82,57 @@ export default async function LocationPage({ params }: { params: Promise<{ id: s
         </header>
 
         {/* Map */}
-        <div className="flex-1 relative">
+        <div className="flex-1 relative overflow-hidden">
           <MapView location={location} />
+        </div>
+
+        {/* Stats strip */}
+        <div
+          className="flex-shrink-0 grid grid-cols-4"
+          style={{ background: "#faf8f4", borderTop: "1px solid #e8e2d8" }}
+        >
+          {[
+            { value: `${location.flooded_area_km2} km²`, label: "Flooded area", accent: true },
+            { value: `${location.flooded_pct}%`, label: "Of location", accent: false },
+            { value: location.scene_date, label: "Scene date", accent: false },
+            { value: location.model, label: "Model", accent: false },
+          ].map((stat, i) => (
+            <div
+              key={i}
+              className="px-4 py-3"
+              style={{ borderRight: i < 3 ? "1px solid #ede8e0" : "none" }}
+            >
+              <div
+                className="text-base font-semibold mb-0.5 tracking-tight"
+                style={{ color: stat.accent ? "#c8622a" : "#1c1710", fontSize: stat.value.length > 10 ? 13 : undefined }}
+              >
+                {stat.value}
+              </div>
+              <div className="text-xs" style={{ color: "#9a8f7e" }}>
+                {stat.label}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Legend + metadata */}
+        <div
+          className="flex-shrink-0 flex items-center justify-between px-4 py-2"
+          style={{ background: "#faf8f4", borderTop: "1px solid #ede8e0" }}
+        >
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-1.5">
+              <div style={{ width: 10, height: 10, borderRadius: 2, background: "#c8622a", opacity: 0.5 }} />
+              <span className="text-xs" style={{ color: "#7a7060" }}>Water</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <div style={{ width: 10, height: 10, borderRadius: 2, background: "#c8bfb0" }} />
+              <span className="text-xs" style={{ color: "#7a7060" }}>Land</span>
+            </div>
+          </div>
+          <div className="text-xs font-mono" style={{ color: "#b0a090" }}>
+            S1-SAR · VV/VH · 512×512 patches
+          </div>
         </div>
 
       </div>
