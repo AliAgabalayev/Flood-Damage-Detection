@@ -27,6 +27,9 @@ dvc==3.67.1           # data + model versioning
 # --- Comparison track: YOLO-seg (Phase 4 / M5) ---
 ultralytics==8.4.76
 
+# --- Comparison track: SegFormer-B2 (Phase 4 / M5) ---
+transformers==5.5.3
+
 # --- EDA / metrics / misc ---
 matplotlib==3.11.0
 scikit-learn==1.9.0
