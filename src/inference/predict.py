@@ -9,7 +9,7 @@ import torch
 from torch import Tensor
 
 from data.preprocessing import default_preprocessor
-from inference.stitching import MaskTile, binarize, stitch_tiles, write_geotiff
+from inference.stitching import MaskTile, binarize, stitch_tiles, verify_overlay, write_geotiff
 from inference.tiling import TileRecord, generate_tiles
 from training.lightning_module import FloodModel
 from utils.config import Config, load_config
@@ -123,7 +123,8 @@ def predict(
     )
 
     out = write_geotiff(binary_mask, scene_path, output_path)
-    logger.info("Mask written to: %s", out)
+    verify_overlay(out, scene_path)
+    logger.info("Mask written to: %s (CRS/transform verified against scene)", out)
     return out
 
 def main() -> None:
