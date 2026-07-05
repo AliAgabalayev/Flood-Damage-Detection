@@ -37,7 +37,10 @@ eval:
 	$(PY) -m inference.evaluate --config $(CONFIG)
 
 predict:
-	$(PY) -m inference.predict --config $(CONFIG)
+	$(PY) -m inference.predict \
+		--input $(INPUT) \
+		--output $(OUTPUT) \
+		--config $(CONFIG)
 
 finalists:
 	$(PY) scripts/run_loss_study.py --matrix $(FINALISTS_MATRIX) --ckpt-root $(FINALISTS_CKPT) $(if $(ONLY),--only $(ONLY),)
