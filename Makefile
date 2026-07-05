@@ -14,7 +14,7 @@ help:
 	@echo "config     validate config/default.yaml"
 	@echo "train      train baseline (DeepLabV3+)"
 	@echo "eval       evaluate a checkpoint on a split"
-	@echo "predict    tiled predict to GeoTIFF"
+	@echo "predict    tiled predict to GeoTIFF (INPUT=.. OUTPUT=..)"
 	@echo "finalists  run M1b loss finalists (ONLY=<run_name> for a single run)"
 	@echo "download-weak-data  download Sen1Floods11 weak-labeled chips (~6.8 GiB)"
 	@echo "weak-splits         build train/val split CSVs for the weak-labeled chips"
