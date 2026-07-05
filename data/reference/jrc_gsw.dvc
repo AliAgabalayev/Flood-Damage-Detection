@@ -1,0 +1,6 @@
+outs:
+- md5: ccb3530c9a224bac1a445974d7ac4578.dir
+  size: 740563286
+  nfiles: 17
+  hash: md5
+  path: jrc_gsw
