@@ -35,7 +35,7 @@ class DataConfig(_Base):
 
 
 class ModelConfig(_Base):
-    arch: Literal["deeplabv3plus", "deeplabv3", "unet", "unetplusplus", "fpn"]
+    arch: Literal["deeplabv3plus", "deeplabv3", "unet", "unetplusplus", "fpn", "segformer_b2"]
     backbone: str = "resnet34"
     pretrained: bool = True
     in_channels: int = Field(3, gt=0)
