@@ -4,7 +4,7 @@ MLFLOW_URI ?= sqlite:///mlflow.db
 
 .DEFAULT_GOAL := help
 
-.PHONY: help install config train eval predict finalists download-weak-data weak-splits pretrain-finetune mlflow-ui dvc-push dvc-pull lint
+.PHONY: help install config train eval predict finalists download-weak-data weak-splits pretrain-finetune vast-bootstrap mlflow-ui dvc-push dvc-pull lint
 
 FINALISTS_MATRIX := config/experiments/loss_finalists.yaml
 FINALISTS_CKPT := models/loss_finalists
@@ -19,6 +19,7 @@ help:
 	@echo "download-weak-data  download Sen1Floods11 weak-labeled chips (~6.8 GiB)"
 	@echo "weak-splits         build train/val split CSVs for the weak-labeled chips"
 	@echo "pretrain-finetune   pretrain on weak labels, fine-tune on hand labels"
+	@echo "vast-bootstrap      set up a fresh Vast.ai GPU box (venv, data, config check) — no training launched"
 	@echo "mlflow-ui  launch MLflow UI on the sqlite backend"
 	@echo "dvc-push   push tracked data/models to DVC remote"
 	@echo "dvc-pull   pull tracked data/models from DVC remote"
@@ -55,6 +56,9 @@ weak-splits:
 
 pretrain-finetune:
 	$(PY) scripts/run_pretrain_finetune.py $(if $(EVAL_TEST),--evaluate-test,)
+
+vast-bootstrap:
+	bash scripts/vast_bootstrap.sh
 
 mlflow-ui:
 	.venv/bin/mlflow ui --backend-store-uri $(MLFLOW_URI)
