@@ -18,7 +18,7 @@ export default async function LocationPage({ params }: { params: Promise<{ id: s
       <div className="flex h-screen items-center justify-center" style={{ background: "#f0ece4" }}>
         <div className="text-center">
           <div className="text-sm font-medium mb-2" style={{ color: "#c8622a" }}>Location not found</div>
-          <Link href="/" className="text-xs underline" style={{ color: "#9a8f7e" }}>← Back to locations</Link>
+          <Link href="/" className="text-xs underline" style={{ color: "#9a8f7e" }}>Back to locations</Link>
         </div>
       </div>
     );
@@ -36,14 +36,14 @@ export default async function LocationPage({ params }: { params: Promise<{ id: s
           </svg>
         </div>
         {[
-          { label: "Map", active: true, symbol: "⊞" },
-          { label: "Layers", active: false, symbol: "◫" },
-          { label: "Download", active: false, symbol: "↓" },
+          { label: "Map", active: true, symbol: "M" },
+          { label: "Layers", active: false, symbol: "L" },
+          { label: "Download", active: false, symbol: "D" },
         ].map((item) => (
           <button
             key={item.label}
             aria-label={item.label}
-            className="w-9 h-9 rounded-lg flex items-center justify-center transition-colors text-base"
+            className="w-9 h-9 rounded-lg flex items-center justify-center transition-colors text-xs font-mono"
             style={{
               background: item.active ? "#3d3020" : "transparent",
               color: item.active ? "#e8c89a" : "#7a6a55",
@@ -64,7 +64,7 @@ export default async function LocationPage({ params }: { params: Promise<{ id: s
         >
           <div className="flex items-center gap-3">
             <Link href="/" className="text-xs transition-colors hover:opacity-70" style={{ color: "#9a8f7e" }}>
-              ← Back
+              Back
             </Link>
             <div style={{ width: "1px", height: "16px", background: "#e8e2d8" }} />
             <div>
@@ -72,7 +72,7 @@ export default async function LocationPage({ params }: { params: Promise<{ id: s
                 {location.name}
               </div>
               <div className="text-xs font-mono" style={{ color: "#9a8f7e" }}>
-                {location.center[0].toFixed(4)}°N {location.center[1].toFixed(4)}°E
+                {location.center[0].toFixed(4)}N {location.center[1].toFixed(4)}E
               </div>
             </div>
           </div>
@@ -92,7 +92,7 @@ export default async function LocationPage({ params }: { params: Promise<{ id: s
           style={{ background: "#faf8f4", borderTop: "1px solid #e8e2d8" }}
         >
           {[
-            { value: `${location.flooded_area_km2} km²`, label: "Flooded area", accent: true },
+            { value: `${location.flooded_area_km2} km2`, label: "Flooded area", accent: true },
             { value: `${location.flooded_pct}%`, label: "Of location", accent: false },
             { value: location.scene_date, label: "Scene date", accent: false },
             { value: location.model, label: "Model", accent: false },
@@ -115,23 +115,55 @@ export default async function LocationPage({ params }: { params: Promise<{ id: s
           ))}
         </div>
 
-        {/* Legend + metadata */}
+        {/* Legend + download */}
         <div
           className="flex-shrink-0 flex items-center justify-between px-4 py-2"
           style={{ background: "#faf8f4", borderTop: "1px solid #ede8e0" }}
         >
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-1.5">
-              <div style={{ width: 10, height: 10, borderRadius: 2, background: "#c8622a", opacity: 0.5 }} />
-              <span className="text-xs" style={{ color: "#7a7060" }}>Water</span>
+          <div className="flex items-center gap-6">
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-1.5">
+                <div style={{ width: 10, height: 10, borderRadius: 2, background: "#c8622a", opacity: 0.5 }} />
+                <span className="text-xs" style={{ color: "#7a7060" }}>Water</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <div style={{ width: 10, height: 10, borderRadius: 2, background: "#c8bfb0" }} />
+                <span className="text-xs" style={{ color: "#7a7060" }}>Land</span>
+              </div>
             </div>
-            <div className="flex items-center gap-1.5">
-              <div style={{ width: 10, height: 10, borderRadius: 2, background: "#c8bfb0" }} />
-              <span className="text-xs" style={{ color: "#7a7060" }}>Land</span>
+            <div className="text-xs font-mono" style={{ color: "#b0a090" }}>
+              S1-SAR · VV/VH · 512x512 patches
             </div>
           </div>
-          <div className="text-xs font-mono" style={{ color: "#b0a090" }}>
-            S1-SAR · VV/VH · 512×512 patches
+
+          {/* Download buttons */}
+          <div className="flex items-center gap-2">
+            {location.mask_url ? (
+              <div className="flex items-center gap-2">
+                
+                  href={location.mask_url}
+                  <a download={`${location.id}_mask.png`}
+                  className="text-xs font-medium px-3 py-1.5 rounded-lg"
+                  style={{ background: "#2c2416", color: "#e8c89a", border: "1px solid #2c2416" }}
+                >
+                  Download PNG
+                </a>
+                {location.geotiff_url && (
+                  
+                    <a href={location.geotiff_url}
+                    download={`${location.id}_mask.tif`}
+                    className="text-xs font-medium px-3 py-1.5 rounded-lg"
+                    style={{ background: "#faf8f4", color: "#3c3020", border: "1px solid #e8e2d8" }}
+                  >
+                    Download GeoTIFF
+                  </a>
+                )}
+              </div>
+            ) : (
+              <span className="text-xs" style={{ color: "#b0a090" }}>
+                Downloads available after model output
+              </span>
+            )}
           </div>
         </div>
 
