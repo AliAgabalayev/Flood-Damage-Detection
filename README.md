@@ -33,7 +33,7 @@ pip install -r requirements.txt
 make config                      # validate config/default.yaml
 make train                       # train the production baseline
 make eval                        # evaluate a checkpoint on a split
-make predict INPUT=.. OUTPUT=..  # tiled predict -> georeferenced GeoTIFF
+make predict INPUT=.. OUTPUT=.. [PROB=..]  # tiled predict -> georeferenced GeoTIFF
 make finalists ONLY=<run_name>   # architecture/loss sweep runs
 make pretrain-finetune           # weak-label pretrain + hand-label fine-tune
 make mlflow-ui                   # MLflow UI (sqlite:///mlflow.db)
@@ -75,7 +75,8 @@ Flood-Damage-Detection/
    touched once.
 4. **Infer** — `make predict INPUT=scene.tif OUTPUT=mask.tif` runs a trained
    checkpoint on a full scene, tiling and stitching into a georeferenced
-   flood-mask GeoTIFF.
+   flood-mask GeoTIFF. Add `PROB=prob.tif` to also save the per-pixel flood
+   probability as a float32 GeoTIFF.
 
 Every run logs to MLflow (params, git SHA, DVC data hash, metrics, checkpoint) —
 see `make mlflow-ui`.

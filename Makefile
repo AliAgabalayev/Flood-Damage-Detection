@@ -14,7 +14,7 @@ help:
 	@echo "config     validate config/default.yaml"
 	@echo "train      train baseline (DeepLabV3+)"
 	@echo "eval       evaluate a checkpoint on a split"
-	@echo "predict    tiled predict to GeoTIFF (INPUT=.. OUTPUT=..)"
+	@echo "predict    tiled predict to GeoTIFF (INPUT=.. OUTPUT=.. PROB=<optional prob GeoTIFF>)"
 	@echo "finalists  run M1b loss finalists (ONLY=<run_name> for a single run)"
 	@echo "download-weak-data  download Sen1Floods11 weak-labeled chips (~6.8 GiB)"
 	@echo "weak-splits         build train/val split CSVs for the weak-labeled chips"
@@ -40,7 +40,8 @@ predict:
 	$(PY) -m inference.predict \
 		--input $(INPUT) \
 		--output $(OUTPUT) \
-		--config $(CONFIG)
+		--config $(CONFIG) \
+		$(if $(PROB),--prob-output $(PROB),)
 
 finalists:
 	$(PY) scripts/run_loss_study.py --matrix $(FINALISTS_MATRIX) --ckpt-root $(FINALISTS_CKPT) $(if $(ONLY),--only $(ONLY),)
