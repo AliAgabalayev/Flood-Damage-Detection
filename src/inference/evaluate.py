@@ -43,7 +43,7 @@ def main() -> None:
     from training.lightning_module import FloodModel
 
     dm = FloodDataModule(cfg)
-    dm.setup("test")
+    dm.setup("test" if args.split == "test" else "validate")
     model = FloodModel(cfg)
     ckpt = torch.load(cfg.inference.checkpoint, map_location="cpu")
     model.load_state_dict(ckpt["state_dict"], strict=False)

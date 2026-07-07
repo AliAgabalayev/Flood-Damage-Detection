@@ -1,0 +1,44 @@
+seed: 42
+
+data:
+  root: data/processed/sen1floods11
+  s1_subdir: S1Hand
+  label_subdir: LabelHand
+  split_dir: data/splits/official_usa
+  image_size: 512
+  num_workers: 4
+  vv_clip: [-25.0, 0.0]
+  vh_clip: [-35.0, 0.0]
+  ratio_clip: [0.0, 18.0]
+  augment: true
+
+model:
+  arch: deeplabv3plus
+  backbone: resnet50
+  pretrained: true
+  in_channels: 3
+  out_classes: 1
+
+training:
+  batch_size: 2
+  accumulate_grad_batches: 4
+  precision: 16-mixed
+  epochs: 50
+  lr: 0.0001
+  optimizer: adam
+  loss: dice
+  pos_weight: null
+  early_stopping_patience: null
+  device: cuda
+  checkpoint_dir: models/weak_pretrain_finetune/finetune
+
+mlflow:
+  tracking_uri: sqlite:///mlflow.db
+  artifact_location: mlruns
+  experiment: flood-water-seg/weak_pretrain_finetune
+
+inference:
+  checkpoint: models/weak_pretrain_finetune/finetune/best.ckpt
+  threshold: 0.5
+  tile_size: 512
+  tile_overlap: 64
