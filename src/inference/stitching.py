@@ -88,6 +88,7 @@ def write_geotiff(
     mask: np.ndarray,
     scene_path: Union[Path, str],
     out_path: Union[Path, str],
+    dtype: str = "uint8",
 ) -> Path:
     # save the mask as a GeoTIFF, reusing the scene's CRS + transform
 
@@ -107,12 +108,12 @@ def write_geotiff(
             f"cannot preserve georeferencing."
         )
 
-    profile.update(count=1, dtype="uint8", compress="lzw", nodata=None)
+    profile.update(count=1, dtype=dtype, compress="lzw", nodata=None)
 
     out_path = Path(out_path)
     out_path.parent.mkdir(parents=True, exist_ok=True)
     with rasterio.open(out_path, "w", **profile) as dst:
-        dst.write(mask.astype(np.uint8), 1)
+        dst.write(mask.astype(dtype), 1)
 
     return out_path
 
