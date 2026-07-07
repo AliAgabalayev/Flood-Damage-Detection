@@ -9,6 +9,7 @@ import torch
 from torch import Tensor
 
 from data.preprocessing import default_preprocessor
+from inference.permanent_water import permanent_water_mask, subtract_permanent_water
 from inference.stitching import MaskTile, binarize, stitch_tiles, verify_overlay, write_geotiff
 from inference.tiling import TileRecord, generate_tiles
 from training.lightning_module import FloodModel
@@ -124,6 +125,17 @@ def predict(
         flood_pixels,
         100.0 * flood_pixels / binary_mask.size,
     )
+
+    if cfg.inference.permanent_water is not None:
+        pw = cfg.inference.permanent_water
+        permanent = permanent_water_mask(scene_path, pw.gsw_dir, pw.occurrence_threshold)
+        pre_flood_pixels = int(binary_mask.sum())
+        binary_mask = subtract_permanent_water(binary_mask, permanent)
+        logger.info(
+            "Permanent-water mask applied (threshold=%.1f) — %d pixel(s) removed.",
+            pw.occurrence_threshold,
+            pre_flood_pixels - int(binary_mask.sum()),
+        )
 
     out = write_geotiff(binary_mask, scene_path, output_path)
     verify_overlay(out, scene_path)

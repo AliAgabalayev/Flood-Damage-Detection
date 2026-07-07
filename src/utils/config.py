@@ -80,11 +80,17 @@ class MLflowConfig(_Base):
     experiment: str = "flood-water-seg"
 
 
+class PermanentWaterConfig(_Base):
+    gsw_dir: str = "data/reference/jrc_gsw/occurrence"
+    occurrence_threshold: float = Field(50.0, ge=0.0, le=100.0)
+
+
 class InferenceConfig(_Base):
     checkpoint: str = "models/best.ckpt"
     threshold: float = Field(0.5, ge=0.0, le=1.0)
     tile_size: int = Field(512, gt=0)
     tile_overlap: int = Field(64, ge=0)
+    permanent_water: Optional[PermanentWaterConfig] = None
 
 
 class Config(_Base):
