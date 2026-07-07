@@ -10,4 +10,5 @@ export interface Location {
   mask_url: string | null;
   sar_url: string | null;
   geotiff_url: string | null;
+  permanent_water_url: string | null;
 }

@@ -9,7 +9,7 @@ import torch
 from torch import Tensor
 
 from data.preprocessing import default_preprocessor
-from inference.permanent_water import permanent_water_mask, subtract_permanent_water
+from inference.permanent_water import permanent_water_mask
 from inference.stitching import MaskTile, binarize, stitch_tiles, verify_overlay, write_geotiff
 from inference.tiling import TileRecord, generate_tiles
 from training.lightning_module import FloodModel
@@ -47,6 +47,15 @@ def _parse_args() -> argparse.Namespace:
         default=None,
         metavar="PROB",
         help="Optional destination path for a float32 flood-probability GeoTIFF.",
+    )
+    ap.add_argument(
+        "--permanent-water-output",
+        default=None,
+        metavar="PERMANENT_WATER",
+        help=(
+            "Optional destination path for a JRC permanent-water mask GeoTIFF "
+            "(requires inference.permanent_water in config)."
+        ),
     )
     return ap.parse_args()
 
@@ -92,6 +101,7 @@ def predict(
     output_path: Path,
     cfg: Config,
     prob_output_path: Path | None = None,
+    permanent_water_output_path: Path | None = None,
 ) -> Path:
     if not scene_path.exists():
         raise SystemExit(f"Input scene not found: {scene_path}")
@@ -133,17 +143,6 @@ def predict(
         100.0 * flood_pixels / binary_mask.size,
     )
 
-    if cfg.inference.permanent_water is not None:
-        pw = cfg.inference.permanent_water
-        permanent = permanent_water_mask(scene_path, pw.gsw_dir, pw.occurrence_threshold)
-        pre_flood_pixels = int(binary_mask.sum())
-        binary_mask = subtract_permanent_water(binary_mask, permanent)
-        logger.info(
-            "Permanent-water mask applied (threshold=%.1f) — %d pixel(s) removed.",
-            pw.occurrence_threshold,
-            pre_flood_pixels - int(binary_mask.sum()),
-        )
-
     out = write_geotiff(binary_mask, scene_path, output_path)
     verify_overlay(out, scene_path)
     logger.info("Mask written to: %s (CRS/transform verified against scene)", out)
@@ -152,6 +151,17 @@ def predict(
         prob_out = write_geotiff(prob_map, scene_path, prob_output_path, dtype="float32")
         verify_overlay(prob_out, scene_path)
         logger.info("Probability map written to: %s", prob_out)
+
+    if permanent_water_output_path is not None:
+        if cfg.inference.permanent_water is None:
+            raise SystemExit(
+                "--permanent-water-output requires inference.permanent_water to be set in config."
+            )
+        pw = cfg.inference.permanent_water
+        permanent = permanent_water_mask(scene_path, pw.gsw_dir, pw.occurrence_threshold)
+        pw_out = write_geotiff(permanent, scene_path, permanent_water_output_path)
+        verify_overlay(pw_out, scene_path)
+        logger.info("Permanent-water mask written to: %s", pw_out)
 
     return out
 
@@ -170,6 +180,9 @@ def main() -> None:
         output_path=Path(args.output),
         cfg=cfg,
         prob_output_path=Path(args.prob_output) if args.prob_output else None,
+        permanent_water_output_path=(
+            Path(args.permanent_water_output) if args.permanent_water_output else None
+        ),
     )
     print(f"Done. Flood mask saved to: {out}")
 
