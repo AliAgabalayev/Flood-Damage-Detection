@@ -4,9 +4,9 @@ import argparse
 import sys
 from pathlib import Path
 
-import mlflow
 import torch
 import yaml
+from mlflow.tracking import MlflowClient
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "src"))
@@ -79,13 +79,29 @@ def run_fold(country: str, pretrain_raw: dict, finetune_raw: dict, skip_pretrain
     heldout_metrics = evaluate_heldout(finetune_cfg, country)
     print(f"----- {country} HELD-OUT: iou={heldout_metrics['iou']:.4f}  f1={heldout_metrics['f1']:.4f} -----")
 
-    mlflow.set_tracking_uri(finetune_cfg.mlflow.tracking_uri)
-    mlflow.set_experiment(finetune_cfg.mlflow.experiment)
-    with mlflow.start_run(run_name=f"heldout_{country}"):
-        mlflow.log_metrics({"heldout_iou": heldout_metrics["iou"], "heldout_f1": heldout_metrics["f1"]})
-        mlflow.log_params({"held_out_country": country, "finetune_val_iou": finetune_result["best_val_iou"]})
+    log_heldout_metrics(
+        finetune_cfg.mlflow.tracking_uri, finetune_cfg.mlflow.experiment,
+        country, heldout_metrics, finetune_result["best_val_iou"],
+    )
 
     return heldout_metrics
+
+
+def log_heldout_metrics(tracking_uri, experiment_name, country, heldout_metrics, finetune_val_iou):
+    # Uses MlflowClient directly (not the fluent mlflow.* API) so this never
+    # touches the process-global "active experiment" state -- mlflow.set_experiment()
+    # is sticky across calls in a long-lived process and breaks the next
+    # country's run_training() (its own fluent mlflow.start_run(run_id=...)
+    # call in train.py checks that state and raises if it doesn't match).
+    client = MlflowClient(tracking_uri=tracking_uri)
+    experiment = client.get_experiment_by_name(experiment_name)
+    experiment_id = experiment.experiment_id if experiment is not None else client.create_experiment(experiment_name)
+    run = client.create_run(experiment_id=experiment_id, run_name=f"heldout_{country}")
+    client.log_metric(run.info.run_id, "heldout_iou", heldout_metrics["iou"])
+    client.log_metric(run.info.run_id, "heldout_f1", heldout_metrics["f1"])
+    client.log_param(run.info.run_id, "held_out_country", country)
+    client.log_param(run.info.run_id, "finetune_val_iou", finetune_val_iou)
+    client.set_terminated(run.info.run_id)
 
 
 def main() -> None:
