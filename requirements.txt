@@ -11,6 +11,8 @@ segmentation_models_pytorch==0.5.0
 # --- Geospatial / SAR I/O ---
 rasterio==1.5.0
 gsutil==5.37          # Sen1Floods11 GCS downloader (scripts/download_data.sh)
+earthengine-api==1.7.33  # Sentinel-1 scene pulls (scripts/pull_s1_scene.py)
+geemap==0.38.3
 
 # --- Data / augmentation ---
 numpy==2.5.0
