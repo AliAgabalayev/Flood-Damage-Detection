@@ -37,7 +37,7 @@ def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--config", default="config/default.yaml")
     ap.add_argument("--split", default="test")
-    ap.add_argument("--tta", action="store_true", help="flip-based test-time augmentation")
+    ap.add_argument("--tta", action=argparse.BooleanOptionalAction, default=None, help="flip-based test-time augmentation (overrides inference.tta in config)")
     args = ap.parse_args()
 
     cfg = load_config(args.config)
@@ -52,7 +52,8 @@ def main() -> None:
 
     device = "cuda" if cfg.training.device == "cuda" and torch.cuda.is_available() else "cpu"
     loader = dm.test_dataloader() if args.split == "test" else dm.val_dataloader()
-    print(evaluate(model, loader, device, tta=args.tta or cfg.inference.tta))
+    tta = cfg.inference.tta if args.tta is None else args.tta
+    print(evaluate(model, loader, device, tta=tta))
 
 
 if __name__ == "__main__":
