@@ -62,6 +62,7 @@ def main() -> None:
     ap.add_argument("--gee-project", required=True, help="your GEE-registered Google Cloud project id")
     args = ap.parse_args()
 
+    ee.Initialize(project=args.gee_project)
     aoi = ee.Geometry.Rectangle([args.min_lon, args.min_lat, args.max_lon, args.max_lat])
     find_and_export(aoi, args.start_date, args.end_date, args.name, args.drive_folder, args.gee_project)
 
