@@ -1,0 +1,6 @@
+outs:
+- md5: bf7c9f8cbb454a09e8d046f13a37c71d.dir
+  size: 1282639872
+  nfiles: 4
+  hash: md5
+  path: weak_pretrain_finetune
