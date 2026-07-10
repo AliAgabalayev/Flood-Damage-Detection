@@ -41,7 +41,7 @@ export default function MapView({ location }: Props) {
   useEffect(() => {
     if (!mapRef.current) return;
 
-    let map: { remove: () => void } | null = null;
+    let map: import("leaflet").Map | null = null;
 
     async function initMap() {
       try {
