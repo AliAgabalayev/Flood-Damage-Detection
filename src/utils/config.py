@@ -91,6 +91,7 @@ class InferenceConfig(_Base):
     tile_size: int = Field(512, gt=0)
     tile_overlap: int = Field(64, ge=0)
     permanent_water: Optional[PermanentWaterConfig] = None
+    tta: bool = False
 
 
 class Config(_Base):
