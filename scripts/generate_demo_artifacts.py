@@ -112,7 +112,7 @@ def _process(
         "flooded_pct": pct,
         "mask_url":    f"/data/{loc_id}/flood_mask.png",
         "geotiff_url": f"/data/{loc_id}/flood_mask.tif",
-        "sar_url":     f"/data/{loc_id}/permanent_water.png",
+        "permanent_water_url": f"/data/{loc_id}/permanent_water.png",
     }
 
 
