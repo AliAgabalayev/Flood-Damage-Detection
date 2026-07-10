@@ -2,8 +2,20 @@
   {
     "id": "baku",
     "name": "Baku, Azerbaijan",
-    "center": [40.4093, 49.8671],
-    "bounds": [[40.1, 49.5], [40.7, 50.3]],
+    "center": [
+      40.4093,
+      49.8671
+    ],
+    "bounds": [
+      [
+        40.1,
+        49.5
+      ],
+      [
+        40.7,
+        50.3
+      ]
+    ],
     "scene_date": "2019-03-15",
     "model": "deeplabv3plus",
     "flooded_area_km2": null,
@@ -16,8 +28,20 @@
   {
     "id": "sabirabad",
     "name": "Sabirabad, Azerbaijan",
-    "center": [39.9878, 48.4692],
-    "bounds": [[39.7, 48.1], [40.3, 48.8]],
+    "center": [
+      39.9878,
+      48.4692
+    ],
+    "bounds": [
+      [
+        39.7,
+        48.1
+      ],
+      [
+        40.3,
+        48.8
+      ]
+    ],
     "scene_date": "2010-05-20",
     "model": "deeplabv3plus",
     "flooded_area_km2": null,
@@ -30,43 +54,79 @@
   {
     "id": "india",
     "name": "Assam / Brahmaputra Valley, India",
-    "center": [26.1445, 91.7362],
-    "bounds": [[25.6, 90.8], [26.7, 92.7]],
+    "center": [
+      26.561386,
+      92.792376
+    ],
+    "bounds": [
+      [
+        26.538389,
+        92.769379
+      ],
+      [
+        26.584383,
+        92.815372
+      ]
+    ],
     "scene_date": "2016-08-12",
     "model": "deeplabv3plus",
-    "flooded_area_km2": null,
-    "flooded_pct": null,
-    "mask_url": null,
-    "sar_url": null,
-    "geotiff_url": null,
+    "flooded_area_km2": 17.49,
+    "flooded_pct": 74.6,
+    "mask_url": "/data/india/flood_mask.png",
+    "sar_url": "/data/india/sar.png",
+    "geotiff_url": "/data/india/flood_mask.tif",
     "permanent_water_url": null
   },
   {
     "id": "pakistan",
     "name": "Indus River Floodplain, Pakistan",
-    "center": [27.5253, 68.7571],
-    "bounds": [[27.0, 68.2], [28.1, 69.4]],
+    "center": [
+      32.540573,
+      71.451279
+    ],
+    "bounds": [
+      [
+        32.517576,
+        71.428282
+      ],
+      [
+        32.56357,
+        71.474276
+      ]
+    ],
     "scene_date": "2017-09-01",
     "model": "deeplabv3plus",
-    "flooded_area_km2": null,
-    "flooded_pct": null,
-    "mask_url": null,
-    "sar_url": null,
-    "geotiff_url": null,
+    "flooded_area_km2": 3.84,
+    "flooded_pct": 17.36,
+    "mask_url": "/data/pakistan/flood_mask.png",
+    "sar_url": "/data/pakistan/sar.png",
+    "geotiff_url": "/data/pakistan/flood_mask.tif",
     "permanent_water_url": null
   },
   {
     "id": "bolivia",
     "name": "Llanos de Mojos, Bolivia",
-    "center": [-14.5000, -65.0000],
-    "bounds": [[-16.0, -65.6], [-11.4, -64.4]],
+    "center": [
+      -14.419038,
+      -65.19613
+    ],
+    "bounds": [
+      [
+        -14.442035,
+        -65.219127
+      ],
+      [
+        -14.396041,
+        -65.173133
+      ]
+    ],
     "scene_date": "2018-02-15",
     "model": "deeplabv3plus",
-    "flooded_area_km2": null,
-    "flooded_pct": null,
-    "mask_url": null,
-    "sar_url": null,
-    "geotiff_url": null,
+    "flooded_area_km2": 11.42,
+    "flooded_pct": 44.97,
+    "mask_url": "/data/bolivia/flood_mask.png",
+    "sar_url": "/data/bolivia/sar.png",
+    "geotiff_url": "/data/bolivia/flood_mask.tif",
     "permanent_water_url": null
   }
 ]
