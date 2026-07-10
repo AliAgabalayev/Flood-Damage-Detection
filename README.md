@@ -43,7 +43,8 @@ make dvc-push / make dvc-pull    # data & model versioning
 ## Data & model versioning
 
 DVC-tracked data (`data/processed/`, `data/reference/`) and checkpoints
-(`models/best.ckpt`) are stored in a shared Google Drive remote, not locally.
+(`models/best.ckpt`, `models/last.ckpt`, `models/weak_pretrain_finetune/`) are
+stored in a shared Google Drive remote, not locally.
 
 Setup on a new machine (one-time):
 1. Ask the repo owner for: (a) access to the shared Drive folder, and (b) the
@@ -77,7 +78,7 @@ Flood-Damage-Detection/
 │   ├── processed/          # Sen1Floods11 hand- and weak-labeled chips (DVC-tracked)
 │   └── splits/             # official + weak train/val/test CSVs
 ├── docs/                   # study reports (e.g. loss_study.md)
-├── models/                 # checkpoints (best.ckpt DVC-tracked; rest git-ignored)
+├── models/                 # checkpoints (best.ckpt, last.ckpt, weak_pretrain_finetune/ DVC-tracked; rest git-ignored)
 ├── notebooks/              # EDA + Colab sweep notebooks
 ├── scripts/                # data download, split generation, sweep/pretrain-finetune runners
 ├── src/
