@@ -3,52 +3,52 @@
     "id": "baku",
     "name": "Baku, Azerbaijan",
     "center": [
-      40.4093,
-      49.8671
+      40.427062,
+      49.922974
     ],
     "bounds": [
       [
-        40.1,
-        49.5
+        40.404066,
+        49.899977
       ],
       [
-        40.7,
-        50.3
+        40.450059,
+        49.94597
       ]
     ],
-    "scene_date": "2019-03-15",
+    "scene_date": "2026-04-07",
     "model": "deeplabv3plus",
-    "flooded_area_km2": null,
-    "flooded_pct": null,
-    "mask_url": null,
-    "sar_url": null,
-    "geotiff_url": null,
+    "flooded_area_km2": 1.17,
+    "flooded_pct": 5.88,
+    "mask_url": "/data/baku/flood_mask.png",
+    "sar_url": "/data/baku/sar.png",
+    "geotiff_url": "/data/baku/flood_mask.tif",
     "permanent_water_url": null
   },
   {
     "id": "sabirabad",
     "name": "Sabirabad, Azerbaijan",
     "center": [
-      39.9878,
-      48.4692
+      40.037014,
+      48.412995
     ],
     "bounds": [
       [
-        39.7,
-        48.1
+        40.014017,
+        48.389999
       ],
       [
-        40.3,
-        48.8
+        40.060011,
+        48.435992
       ]
     ],
-    "scene_date": "2010-05-20",
+    "scene_date": "2026-06-30",
     "model": "deeplabv3plus",
-    "flooded_area_km2": null,
-    "flooded_pct": null,
-    "mask_url": null,
-    "sar_url": null,
-    "geotiff_url": null,
+    "flooded_area_km2": 1.26,
+    "flooded_pct": 6.3,
+    "mask_url": "/data/sabirabad/flood_mask.png",
+    "sar_url": "/data/sabirabad/sar.png",
+    "geotiff_url": "/data/sabirabad/flood_mask.tif",
     "permanent_water_url": null
   },
   {
