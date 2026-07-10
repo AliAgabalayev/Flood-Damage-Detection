@@ -40,6 +40,31 @@ make mlflow-ui                   # MLflow UI (sqlite:///mlflow.db)
 make dvc-push / make dvc-pull    # data & model versioning
 ```
 
+## Data & model versioning
+
+DVC-tracked data (`data/processed/`, `data/reference/`) and checkpoints
+(`models/best.ckpt`) are stored in a shared Google Drive remote, not locally.
+
+Setup on a new machine (one-time):
+1. Ask the repo owner for: (a) access to the shared Drive folder, and (b) the
+   team's DVC OAuth client ID + secret (not committed to git — DVC's own
+   default shared client gets rate-limited/blocked by Google, so this repo
+   uses a dedicated one instead).
+2. Configure the client locally (writes to the gitignored `.dvc/config.local`,
+   never committed):
+   ```bash
+   dvc remote modify --local gdrive gdrive_client_id <client_id>
+   dvc remote modify --local gdrive gdrive_client_secret <client_secret>
+   ```
+3. Run `make dvc-pull` — a browser opens for a one-time Google OAuth consent;
+   the token is then cached (`~/.cache/pydrive2fs/`) and later calls are
+   non-interactive.
+
+```bash
+make dvc-pull   # fetch tracked data/checkpoints
+make dvc-push   # publish tracked data/checkpoints
+```
+
 ## Project structure
 
 ```
