@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { Location } from "@/types/location";
 
 interface Props {
@@ -11,14 +11,37 @@ export default function MapView({ location }: Props) {
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<unknown>(null);
   const overlayRef = useRef<unknown>(null);
+  const permanentWaterOverlayRef = useRef<unknown>(null);
   const [maskVisible, setMaskVisible] = useState(true);
+  const [permanentWaterVisible, setPermanentWaterVisible] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [zoomedCell, setZoomedCell] = useState<number | null>(null);
+
+  const originalBounds = location.bounds;
+
+  // Compute 3x3 grid of sub-bounding-boxes
+  const subBoundsGrid = (() => {
+    const [[south, west], [north, east]] = originalBounds;
+    const latStep = (north - south) / 3;
+    const lngStep = (east - west) / 3;
+    const cells: [[number, number], [number, number]][] = [];
+    for (let row = 0; row < 3; row++) {
+      for (let col = 0; col < 3; col++) {
+        const cellNorth = north - row * latStep;
+        const cellSouth = north - (row + 1) * latStep;
+        const cellWest = west + col * lngStep;
+        const cellEast = west + (col + 1) * lngStep;
+        cells.push([[cellSouth, cellWest], [cellNorth, cellEast]]);
+      }
+    }
+    return cells;
+  })();
 
   useEffect(() => {
     if (!mapRef.current) return;
 
-    let map: { remove: () => void } | null = null;
+    let map: import("leaflet").Map | null = null;
 
     async function initMap() {
       try {
@@ -29,21 +52,27 @@ export default function MapView({ location }: Props) {
         if ((mapRef.current as HTMLElement & { _leaflet_id?: number })._leaflet_id) return;
 
         map = L.map(mapRef.current, {
-          center: location.center,
-          zoom: 11,
           zoomControl: true,
         });
+        map.fitBounds(location.bounds);
 
         L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
           attribution: "© OpenStreetMap contributors",
           maxZoom: 19,
         }).addTo(map as never);
 
+        const bounds: [[number, number], [number, number]] = location.bounds;
+
         if (location.mask_url) {
-          const bounds: [[number, number], [number, number]] = location.bounds;
           const overlay = L.imageOverlay(location.mask_url, bounds, { opacity: 0.6 });
           overlay.addTo(map as never);
           overlayRef.current = overlay;
+        }
+
+        if (location.permanent_water_url) {
+          const pwOverlay = L.imageOverlay(location.permanent_water_url, bounds, { opacity: 0 });
+          pwOverlay.addTo(map as never);
+          permanentWaterOverlayRef.current = pwOverlay;
         }
 
         mapInstanceRef.current = map;
@@ -62,6 +91,7 @@ export default function MapView({ location }: Props) {
         map.remove();
         mapInstanceRef.current = null;
         overlayRef.current = null;
+        permanentWaterOverlayRef.current = null;
       }
     };
   }, [location]);
@@ -72,13 +102,32 @@ export default function MapView({ location }: Props) {
     overlay.setOpacity(maskVisible ? 0.6 : 0);
   }, [maskVisible]);
 
+  useEffect(() => {
+    if (!permanentWaterOverlayRef.current) return;
+    const overlay = permanentWaterOverlayRef.current as { setOpacity: (o: number) => void };
+    overlay.setOpacity(permanentWaterVisible ? 0.55 : 0);
+  }, [permanentWaterVisible]);
+
+  const zoomToCell = useCallback((index: number) => {
+    if (!mapInstanceRef.current) return;
+    const map = mapInstanceRef.current as { fitBounds: (b: unknown, opts: unknown) => void };
+    const cellBounds = subBoundsGrid[index];
+    map.fitBounds(cellBounds, { animate: true });
+    setZoomedCell(index);
+  }, [subBoundsGrid]);
+
+  const resetZoom = useCallback(() => {
+    if (!mapInstanceRef.current) return;
+    const map = mapInstanceRef.current as { fitBounds: (b: unknown, opts: unknown) => void };
+    map.fitBounds(originalBounds, { animate: true });
+    setZoomedCell(null);
+  }, [originalBounds]);
+
   return (
     <div style={{ width: "100%", height: "100%", position: "relative" }}>
 
-      {/* Map */}
       <div ref={mapRef} style={{ width: "100%", height: "100%" }} />
 
-      {/* Loading skeleton */}
       {loading && (
         <div
           style={{
@@ -100,7 +149,6 @@ export default function MapView({ location }: Props) {
         </div>
       )}
 
-      {/* Error banner */}
       {error && (
         <div
           style={{
@@ -114,9 +162,56 @@ export default function MapView({ location }: Props) {
         </div>
       )}
 
-      {/* Toggle button */}
+      {/* 3x3 sub-region grid overlay */}
       {!loading && !error && (
-        <div style={{ position: "absolute", top: 12, right: 12, zIndex: 1000 }}>
+        <div
+          style={{
+            position: "absolute",
+            top: 0, left: 0, right: 0, bottom: 0,
+            display: "grid",
+            gridTemplateColumns: "repeat(3, 1fr)",
+            gridTemplateRows: "repeat(3, 1fr)",
+            zIndex: 400,
+            pointerEvents: "none",
+          }}
+        >
+          {subBoundsGrid.map((_, i) => (
+            <div
+              key={i}
+              onClick={() => zoomToCell(i)}
+              style={{
+                border: "1px dashed rgba(44,36,22,0.15)",
+                cursor: "pointer",
+                pointerEvents: "auto",
+                transition: "background 0.15s",
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(200,98,42,0.08)")}
+              onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
+            />
+          ))}
+        </div>
+      )}
+
+      {/* Reset / full view control */}
+      {!loading && !error && zoomedCell !== null && (
+        <div style={{ position: "absolute", bottom: 12, right: 12, zIndex: 1000 }}>
+          <button
+            onClick={resetZoom}
+            className="flex items-center gap-2 text-xs font-medium px-3 py-2 rounded-lg transition-all"
+            style={{
+              background: "#faf8f4",
+              border: "1px solid #e8e2d8",
+              color: "#3c3020",
+              boxShadow: "0 1px 4px rgba(0,0,0,0.08)",
+            }}
+          >
+            Full view
+          </button>
+        </div>
+      )}
+
+      {!loading && !error && (
+        <div style={{ position: "absolute", top: 12, right: 12, zIndex: 1000, display: "flex", flexDirection: "column", gap: 6, alignItems: "flex-end" }}>
           <button
             onClick={() => setMaskVisible((v) => !v)}
             className="flex items-center gap-2 text-xs font-medium px-3 py-2 rounded-lg transition-all"
@@ -128,12 +223,34 @@ export default function MapView({ location }: Props) {
             }}
           >
             <div style={{ width: 7, height: 7, borderRadius: "50%", background: maskVisible ? "#c8622a" : "#d0c8be" }} />
-            {maskVisible ? "Mask on" : "Mask off"}
+            {maskVisible ? "Flood mask on" : "Flood mask off"}
           </button>
+
+          {location.permanent_water_url ? (
+            <button
+              onClick={() => setPermanentWaterVisible((v) => !v)}
+              className="flex items-center gap-2 text-xs font-medium px-3 py-2 rounded-lg transition-all"
+              style={{
+                background: permanentWaterVisible ? "#eaf1f7" : "#faf8f4",
+                border: permanentWaterVisible ? "1px solid #a8c8dc" : "1px solid #e8e2d8",
+                color: permanentWaterVisible ? "#2c6a8c" : "#9a8f7e",
+                boxShadow: "0 1px 4px rgba(0,0,0,0.08)",
+              }}
+            >
+              <div style={{ width: 7, height: 7, borderRadius: "50%", background: permanentWaterVisible ? "#2c6a8c" : "#d0c8be" }} />
+              {permanentWaterVisible ? "Permanent water on" : "Permanent water off"}
+            </button>
+          ) : (
+            <div
+              className="text-xs px-3 py-2 rounded-lg"
+              style={{ background: "#faf8f4", border: "1px solid #e8e2d8", color: "#b0a090", boxShadow: "0 1px 4px rgba(0,0,0,0.08)" }}
+            >
+              JRC layer pending
+            </div>
+          )}
         </div>
       )}
 
-      {/* No mask notice */}
       {!loading && !error && !location.mask_url && (
         <div
           style={{

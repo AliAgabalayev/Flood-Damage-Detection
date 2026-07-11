@@ -123,8 +123,12 @@ export default async function LocationPage({ params }: { params: Promise<{ id: s
           <div className="flex items-center gap-6">
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-1.5">
-                <div style={{ width: 10, height: 10, borderRadius: 2, background: "#c8622a", opacity: 0.5 }} />
-                <span className="text-xs" style={{ color: "#7a7060" }}>Water</span>
+                <div style={{ width: 10, height: 10, borderRadius: 2, background: "#c8bfb0" }} />
+                <span className="text-xs" style={{ color: "#7a7060" }}>Land</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <div style={{ width: 10, height: 10, borderRadius: 2, background: "#2c6a8c", opacity: 0.55 }} />
+                <span className="text-xs" style={{ color: "#7a7060" }}>Permanent water (JRC)</span>
               </div>
               <div className="flex items-center gap-1.5">
                 <div style={{ width: 10, height: 10, borderRadius: 2, background: "#c8bfb0" }} />
