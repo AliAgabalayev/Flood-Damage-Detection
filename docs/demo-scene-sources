@@ -1,0 +1,24 @@
+# Acquire real Sentinel-1 scenes for all five demo locations.
+
+Sources
+-------
+India / Pakistan / Bolivia
+    Sen1Floods11 public GCS bucket (no authentication required).
+    Each is a representative 512×512 hand-labeled chip from the official dataset.
+
+Baku (Azerbaijan)
+    Microsoft Planetary Computer, Sentinel-1 GRD archive (SAS token, no registration).
+    Scene: S1A acquired 2019-03-15 — matches the scene_date in locations.json.
+    Downloaded as a VV+VH windowed crop over the Baku AOI, reprojected to EPSG:4326.
+
+Sabirabad (Azerbaijan)
+    Microsoft Planetary Computer, Sentinel-1 GRD archive.
+    Scene: S1A acquired 2021-06-19 — during active spring flood season.
+    NOTE: The original locations.json scene_date "2010-05-20" is pre-Sentinel-1 launch
+    (S1A launched 2014-04-03) and is therefore impossible. The script updates
+    locations.json to the actual acquisition date of the downloaded scene.
+
+Usage
+-----
+    python scripts/download_demo_scenes.py
+    python scripts/download_demo_scenes.py --scene-dir data/demo_scenes

@@ -111,8 +111,9 @@ def _process(
         "flooded_area_km2": area_km2,
         "flooded_pct": pct,
         "mask_url":    f"/data/{loc_id}/flood_mask.png",
+        "sar_url":     None,
         "geotiff_url": f"/data/{loc_id}/flood_mask.tif",
-        "sar_url":     f"/data/{loc_id}/permanent_water.png",
+        "permanent_water_url": f"/data/{loc_id}/permanent_water.png",
     }
 
 

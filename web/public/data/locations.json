@@ -6,12 +6,12 @@
     "bounds": [[40.1, 49.5], [40.7, 50.3]],
     "scene_date": "2019-03-15",
     "model": "deeplabv3plus",
-    "flooded_area_km2": null,
-    "flooded_pct": null,
-    "mask_url": null,
+    "flooded_area_km2": 0.0,
+    "flooded_pct": 0.0,
+    "mask_url": "/data/baku/flood_mask.png",
     "sar_url": null,
-    "geotiff_url": null,
-    "permanent_water_url": null
+    "geotiff_url": "/data/baku/flood_mask.tif",
+    "permanent_water_url": "/data/baku/permanent_water.png"
   },
   {
     "id": "sabirabad",
@@ -20,12 +20,12 @@
     "bounds": [[39.7, 48.1], [40.3, 48.8]],
     "scene_date": "2010-05-20",
     "model": "deeplabv3plus",
-    "flooded_area_km2": null,
-    "flooded_pct": null,
-    "mask_url": null,
+    "flooded_area_km2": 446.9,
+    "flooded_pct": 11.21,
+    "mask_url": "/data/sabirabad/flood_mask.png",
     "sar_url": null,
-    "geotiff_url": null,
-    "permanent_water_url": null
+    "geotiff_url": "/data/sabirabad/flood_mask.tif",
+    "permanent_water_url": "/data/sabirabad/permanent_water.png"
   },
   {
     "id": "india",
@@ -34,12 +34,12 @@
     "bounds": [[25.6, 90.8], [26.7, 92.7]],
     "scene_date": "2016-08-12",
     "model": "deeplabv3plus",
-    "flooded_area_km2": null,
-    "flooded_pct": null,
-    "mask_url": null,
+    "flooded_area_km2": 0.14,
+    "flooded_pct": 0.61,
+    "mask_url": "/data/india/flood_mask.png",
     "sar_url": null,
-    "geotiff_url": null,
-    "permanent_water_url": null
+    "geotiff_url": "/data/india/flood_mask.tif",
+    "permanent_water_url": "/data/india/permanent_water.png"
   },
   {
     "id": "pakistan",
@@ -48,25 +48,25 @@
     "bounds": [[27.0, 68.2], [28.1, 69.4]],
     "scene_date": "2017-09-01",
     "model": "deeplabv3plus",
-    "flooded_area_km2": null,
-    "flooded_pct": null,
-    "mask_url": null,
+    "flooded_area_km2": 3.34,
+    "flooded_pct": 14.61,
+    "mask_url": "/data/pakistan/flood_mask.png",
     "sar_url": null,
-    "geotiff_url": null,
-    "permanent_water_url": null
+    "geotiff_url": "/data/pakistan/flood_mask.tif",
+    "permanent_water_url": "/data/pakistan/permanent_water.png"
   },
   {
     "id": "bolivia",
     "name": "Llanos de Mojos, Bolivia",
-    "center": [-14.5000, -65.0000],
+    "center": [-14.5, -65.0],
     "bounds": [[-16.0, -65.6], [-11.4, -64.4]],
     "scene_date": "2018-02-15",
     "model": "deeplabv3plus",
-    "flooded_area_km2": null,
-    "flooded_pct": null,
-    "mask_url": null,
+    "flooded_area_km2": 1.32,
+    "flooded_pct": 5.16,
+    "mask_url": "/data/bolivia/flood_mask.png",
     "sar_url": null,
-    "geotiff_url": null,
-    "permanent_water_url": null
+    "geotiff_url": "/data/bolivia/flood_mask.tif",
+    "permanent_water_url": "/data/bolivia/permanent_water.png"
   }
 ]
