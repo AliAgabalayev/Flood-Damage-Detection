@@ -59,18 +59,13 @@ def _compute_stats(mask: np.ndarray, scene: Path) -> Tuple[float, float]:
     return round(flood * px_km2, 2), round(100.0 * flood / (h * w), 2)
 
 
-def _process(
-    loc: Dict[str, Any],
+def process_scene(
     scene: Path,
-    output_dir: Path,
+    out_dir: Path,
     model: Any,
     device: str,
     cfg: Config,
-) -> Dict[str, Any]:
-    loc_id = loc["id"]
-    logger.info("--- %s (%s)", loc_id, loc["name"])
-
-    out_dir = output_dir / loc_id
+) -> Tuple[float, float]:
     out_dir.mkdir(parents=True, exist_ok=True)
 
     # Inference
@@ -106,15 +101,7 @@ def _process(
 
     logger.info("  flooded_area_km2=%.2f  flooded_pct=%.2f%%", area_km2, pct)
 
-    return {
-        **loc,
-        "flooded_area_km2": area_km2,
-        "flooded_pct": pct,
-        "mask_url":    f"/data/{loc_id}/flood_mask.png",
-        "sar_url":     None,
-        "geotiff_url": f"/data/{loc_id}/flood_mask.tif",
-        "permanent_water_url": f"/data/{loc_id}/permanent_water.png",
-    }
+    return area_km2, pct
 
 
 def _parse_args() -> argparse.Namespace:
@@ -171,11 +158,40 @@ def main() -> None:
     updated = []
     for loc in locations:
         scene = scene_dir / f"{loc['id']}.tif"
-        updated.append(_process(loc, scene, output_dir, model, device, cfg))
+        loc_id = loc["id"]
+        logger.info("--- %s (%s)", loc_id, loc.get("name", ""))
+        
+        # Use existing date if available, otherwise 'latest'
+        date_str = loc.get("scenes", [{}])[0].get("date", "latest")
+        scene_out_dir = output_dir / loc_id / date_str
+        
+        area_km2, pct = process_scene(scene, scene_out_dir, model, device, cfg)
+        
+        new_scene = {
+            "scene_id": loc.get("scenes", [{}])[0].get("scene_id", f"local_{date_str}"),
+            "date": date_str,
+            "flooded_area_km2": area_km2,
+            "flooded_pct": pct,
+            "mask_url":    f"/data/{loc_id}/{date_str}/flood_mask.png",
+            "sar_url":     None,
+            "geotiff_url": f"/data/{loc_id}/{date_str}/flood_mask.tif",
+            "permanent_water_url": f"/data/{loc_id}/{date_str}/permanent_water.png",
+        }
+        
+        if loc.get("scenes"):
+            loc["scenes"][0].update(new_scene)
+        else:
+            loc["scenes"] = [new_scene]
+        updated.append(loc)
 
-    with locations_path.open("w", encoding="utf-8") as f:
+    import tempfile
+    import os
+    # Atomic write to avoid corruption
+    tmp_path = locations_path.with_suffix(".json.tmp")
+    with tmp_path.open("w", encoding="utf-8") as f:
         json.dump(updated, f, indent=2, ensure_ascii=False)
         f.write("\n")
+    os.replace(tmp_path, locations_path)
 
 if __name__ == "__main__":
     main()

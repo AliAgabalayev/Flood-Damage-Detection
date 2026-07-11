@@ -13,7 +13,7 @@ export default async function LocationPage({ params }: { params: Promise<{ id: s
   const { id } = await params;
   const location = locations.find((l) => l.id === id);
 
-  if (!location) {
+  if (!location || !location.scenes || location.scenes.length === 0) {
     return (
       <div className="flex h-screen items-center justify-center" style={{ background: "#f0ece4" }}>
         <div className="text-center">
@@ -23,6 +23,8 @@ export default async function LocationPage({ params }: { params: Promise<{ id: s
       </div>
     );
   }
+
+  const latestScene = location.scenes[0];
 
   return (
     <div className="flex h-screen overflow-hidden" style={{ background: "#f0ece4" }}>
@@ -77,7 +79,7 @@ export default async function LocationPage({ params }: { params: Promise<{ id: s
             </div>
           </div>
           <div className="text-xs font-mono" style={{ color: "#b0a090" }}>
-            {location.scene_date} · {location.model}
+            {latestScene.date} · {location.model}
           </div>
         </header>
 
@@ -92,9 +94,9 @@ export default async function LocationPage({ params }: { params: Promise<{ id: s
           style={{ background: "#faf8f4", borderTop: "1px solid #e8e2d8" }}
         >
           {[
-            { value: `${location.flooded_area_km2} km2`, label: "Flooded area", accent: true },
-            { value: `${location.flooded_pct}%`, label: "Of location", accent: false },
-            { value: location.scene_date, label: "Scene date", accent: false },
+            { value: `${latestScene.flooded_area_km2} km2`, label: "Flooded area", accent: true },
+            { value: `${latestScene.flooded_pct}%`, label: "Of location", accent: false },
+            { value: latestScene.date, label: "Scene date", accent: false },
             { value: location.model, label: "Model", accent: false },
           ].map((stat, i) => (
             <div
@@ -138,19 +140,19 @@ export default async function LocationPage({ params }: { params: Promise<{ id: s
 
           {/* Download buttons */}
           <div className="flex items-center gap-2">
-            {location.mask_url ? (
+            {latestScene.mask_url ? (
               <div className="flex items-center gap-2">
                 
-                  href={location.mask_url}
+                  href={latestScene.mask_url}
                   <a download={`${location.id}_mask.png`}
                   className="text-xs font-medium px-3 py-1.5 rounded-lg"
                   style={{ background: "#2c2416", color: "#e8c89a", border: "1px solid #2c2416" }}
                 >
                   Download PNG
                 </a>
-                {location.geotiff_url && (
+                {latestScene.geotiff_url && (
                   
-                    <a href={location.geotiff_url}
+                    <a href={latestScene.geotiff_url}
                     download={`${location.id}_mask.tif`}
                     className="text-xs font-medium px-3 py-1.5 rounded-lg"
                     style={{ background: "#faf8f4", color: "#3c3020", border: "1px solid #e8e2d8" }}
