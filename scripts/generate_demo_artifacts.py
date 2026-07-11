@@ -44,6 +44,33 @@ def _mask_to_png(mask: np.ndarray, rgba: Tuple[int, int, int, int], out: Path) -
     Image.fromarray(canvas, mode="RGBA").save(out)
 
 
+def _sar_to_png(scene: Path, vv_clip: Tuple[float, float], out: Path) -> None:
+    # Grayscale render of the VV band, clipped/scaled the same way as preprocessing
+    with rasterio.open(scene) as src:
+        vv = src.read(1).astype(np.float32)
+    lo, hi = vv_clip
+    scaled = np.nan_to_num(np.clip((vv - lo) / (hi - lo), 0.0, 1.0), nan=0.0)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    Image.fromarray((scaled * 255).astype(np.uint8), mode="L").save(out)
+
+
+def _geo_bounds_and_center(
+    scene: Path,
+) -> Tuple[List[List[float]], List[float]]:
+    # Real bounds/center from the scene's own CRS, in the [[south, west], [north, east]]
+    # shape the frontend expects — replaces hand-entered placeholder geometry.
+    with rasterio.open(scene) as src:
+        if src.crs is not None and src.crs.to_epsg() != 4326:
+            from rasterio.warp import transform_bounds
+            left, bottom, right, top = transform_bounds(src.crs, "EPSG:4326", *src.bounds)
+        else:
+            left, bottom, right, top = src.bounds
+
+    bounds = [[round(bottom, 6), round(left, 6)], [round(top, 6), round(right, 6)]]
+    center = [round((bottom + top) / 2, 6), round((left + right) / 2, 6)]
+    return bounds, center
+
+
 def _compute_stats(mask: np.ndarray, scene: Path) -> Tuple[float, float]:
     # Return (flooded_area_km2, flooded_pct) for a binary flood mask
     with rasterio.open(scene) as src:
@@ -83,37 +110,40 @@ def _process(
     prob_map = stitch_tiles(_run_tile_inference(model, tiles, device), shape)
     flood = binarize(prob_map, threshold=cfg.inference.threshold)
 
-    # Permanent-water
+    # Permanent-water (opt-in; off unless config sets inference.permanent_water)
+    permanent_water_url = None
     if cfg.inference.permanent_water is not None:
         pw = cfg.inference.permanent_water
         gsw_dir = Path(pw.gsw_dir)
         _require(gsw_dir, "JRC GSW occurrence directory")
         perm = permanent_water_mask(scene, gsw_dir, pw.occurrence_threshold)
         flood = subtract_permanent_water(flood, perm)
-    else:
-        perm = np.zeros(shape, dtype=np.uint8)
+        write_geotiff(perm, scene, out_dir / "permanent_water.tif")
+        _mask_to_png(perm, _WATER_RGBA, out_dir / "permanent_water.png")
+        permanent_water_url = f"/data/{loc_id}/permanent_water.png"
 
     # Statistics
     area_km2, pct = _compute_stats(flood, scene)
 
-    # GeoTIFFs
+    # GeoTIFF + overlay PNGs
     write_geotiff(flood, scene, out_dir / "flood_mask.tif")
-    write_geotiff(perm,  scene, out_dir / "permanent_water.tif")
-
-    # PNGs
     _mask_to_png(flood, _FLOOD_RGBA, out_dir / "flood_mask.png")
-    _mask_to_png(perm,  _WATER_RGBA, out_dir / "permanent_water.png")
+    _sar_to_png(scene, tuple(cfg.data.vv_clip), out_dir / "sar.png")
+
+    bounds, center = _geo_bounds_and_center(scene)
 
     logger.info("  flooded_area_km2=%.2f  flooded_pct=%.2f%%", area_km2, pct)
 
     return {
         **loc,
+        "center": center,
+        "bounds": bounds,
         "flooded_area_km2": area_km2,
         "flooded_pct": pct,
-        "mask_url":    f"/data/{loc_id}/flood_mask.png",
-        "sar_url":     None,
-        "geotiff_url": f"/data/{loc_id}/flood_mask.tif",
-        "permanent_water_url": f"/data/{loc_id}/permanent_water.png",
+        "mask_url":           f"/data/{loc_id}/flood_mask.png",
+        "geotiff_url":        f"/data/{loc_id}/flood_mask.tif",
+        "sar_url":            f"/data/{loc_id}/sar.png",
+        "permanent_water_url": permanent_water_url,
     }
 
 
@@ -152,26 +182,26 @@ def main() -> None:
     scene_dir  = Path(args.scene_dir)
     output_dir = Path(args.output_dir)
 
-    missing = [
-        str(scene_dir / f"{loc['id']}.tif")
-        for loc in locations
-        if not (scene_dir / f"{loc['id']}.tif").exists()
-    ]
+    have_scene = [loc for loc in locations if (scene_dir / f"{loc['id']}.tif").exists()]
+    missing    = [loc for loc in locations if loc not in have_scene]
     if missing:
-        logger.error(
-            "Missing Sentinel-1 scene file(s):\n%s",
-            "\n".join(f"  {p}" for p in missing),
+        logger.warning(
+            "No scene yet for %s — leaving those entries unchanged (skip, not a failure).",
+            ", ".join(loc["id"] for loc in missing),
         )
+    if not have_scene:
+        logger.error("No Sentinel-1 scenes found in %s for any location.", scene_dir)
         sys.exit(1)
 
     device = _select_device(cfg)
     model  = _load_model(cfg, device)
     logger.info("Loaded model on %s", device)
 
-    updated = []
-    for loc in locations:
-        scene = scene_dir / f"{loc['id']}.tif"
-        updated.append(_process(loc, scene, output_dir, model, device, cfg))
+    processed = {
+        loc["id"]: _process(loc, scene_dir / f"{loc['id']}.tif", output_dir, model, device, cfg)
+        for loc in have_scene
+    }
+    updated = [processed.get(loc["id"], loc) for loc in locations]
 
     with locations_path.open("w", encoding="utf-8") as f:
         json.dump(updated, f, indent=2, ensure_ascii=False)

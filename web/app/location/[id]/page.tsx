@@ -144,17 +144,17 @@ export default async function LocationPage({ params }: { params: Promise<{ id: s
           <div className="flex items-center gap-2">
             {location.mask_url ? (
               <div className="flex items-center gap-2">
-                
+                <a
                   href={location.mask_url}
-                  <a download={`${location.id}_mask.png`}
+                  download={`${location.id}_mask.png`}
                   className="text-xs font-medium px-3 py-1.5 rounded-lg"
                   style={{ background: "#2c2416", color: "#e8c89a", border: "1px solid #2c2416" }}
                 >
                   Download PNG
                 </a>
                 {location.geotiff_url && (
-                  
-                    <a href={location.geotiff_url}
+                  <a
+                    href={location.geotiff_url}
                     download={`${location.id}_mask.tif`}
                     className="text-xs font-medium px-3 py-1.5 rounded-lg"
                     style={{ background: "#faf8f4", color: "#3c3020", border: "1px solid #e8e2d8" }}
