@@ -4,7 +4,6 @@ import locationsData from "@/public/data/locations.json";
 import LocationView from "./LocationView";
 
 const locations = locationsData as Location[];
-console.log(JSON.stringify(locations[0], null, 2));
 
 export function generateStaticParams() {
   return locations.map((loc) => ({ id: loc.id }));
