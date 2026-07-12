@@ -146,6 +146,10 @@ export default function LocationView({ location }: Props) {
                 <div style={{ width: 10, height: 10, borderRadius: 2, background: "#2c6a8c", opacity: 0.55 }} />
                 <span className="text-xs" style={{ color: "#7a7060" }}>Permanent water (JRC)</span>
               </div>
+              <div className="flex items-center gap-1.5">
+                <div style={{ width: 10, height: 10, borderRadius: 2, background: "#6a2c8c", opacity: 0.5 }} />
+                <span className="text-xs" style={{ color: "#7a7060" }}>Confidence</span>
+              </div>
             </div>
             <div className="text-xs font-mono" style={{ color: "#b0a090" }}>
               S1-SAR · VV/VH · 512x512 patches
