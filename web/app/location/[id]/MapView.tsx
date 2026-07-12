@@ -1,13 +1,14 @@
 "use client";
 
 import { useEffect, useRef, useState, useCallback } from "react";
-import { Location } from "@/types/location";
+import { Location, SceneArchive } from "@/types/location";
 
 interface Props {
   location: Location;
+  scene: SceneArchive;
 }
 
-export default function MapView({ location }: Props) {
+export default function MapView({ location, scene }: Props) {
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<unknown>(null);
   const overlayRef = useRef<unknown>(null);
@@ -20,7 +21,6 @@ export default function MapView({ location }: Props) {
 
   const originalBounds = location.bounds;
 
-  // Compute 3x3 grid of sub-bounding-boxes
   const subBoundsGrid = (() => {
     const [[south, west], [north, east]] = originalBounds;
     const latStep = (north - south) / 3;
@@ -63,14 +63,14 @@ export default function MapView({ location }: Props) {
 
         const bounds: [[number, number], [number, number]] = location.bounds;
 
-        if (location.mask_url) {
-          const overlay = L.imageOverlay(location.mask_url, bounds, { opacity: 0.6 });
+        if (scene.mask_url) {
+          const overlay = L.imageOverlay(scene.mask_url, bounds, { opacity: 0.6 });
           overlay.addTo(map as never);
           overlayRef.current = overlay;
         }
 
-        if (location.permanent_water_url) {
-          const pwOverlay = L.imageOverlay(location.permanent_water_url, bounds, { opacity: 0 });
+        if (scene.permanent_water_url) {
+          const pwOverlay = L.imageOverlay(scene.permanent_water_url, bounds, { opacity: 0 });
           pwOverlay.addTo(map as never);
           permanentWaterOverlayRef.current = pwOverlay;
         }
@@ -94,7 +94,7 @@ export default function MapView({ location }: Props) {
         permanentWaterOverlayRef.current = null;
       }
     };
-  }, [location]);
+  }, [location, scene]);
 
   useEffect(() => {
     if (!overlayRef.current) return;
@@ -162,7 +162,6 @@ export default function MapView({ location }: Props) {
         </div>
       )}
 
-      {/* 3x3 sub-region grid overlay */}
       {!loading && !error && (
         <div
           style={{
@@ -192,7 +191,6 @@ export default function MapView({ location }: Props) {
         </div>
       )}
 
-      {/* Reset / full view control */}
       {!loading && !error && zoomedCell !== null && (
         <div style={{ position: "absolute", bottom: 12, right: 12, zIndex: 1000 }}>
           <button
@@ -226,7 +224,7 @@ export default function MapView({ location }: Props) {
             {maskVisible ? "Flood mask on" : "Flood mask off"}
           </button>
 
-          {location.permanent_water_url ? (
+          {scene.permanent_water_url ? (
             <button
               onClick={() => setPermanentWaterVisible((v) => !v)}
               className="flex items-center gap-2 text-xs font-medium px-3 py-2 rounded-lg transition-all"
@@ -251,7 +249,7 @@ export default function MapView({ location }: Props) {
         </div>
       )}
 
-      {!loading && !error && !location.mask_url && (
+      {!loading && !error && !scene.mask_url && (
         <div
           style={{
             position: "absolute", bottom: 32, left: "50%", transform: "translateX(-50%)",

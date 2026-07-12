@@ -48,4 +48,4 @@ inference:
     dem_dir: data/reference/dem   # Copernicus GLO-30, falls back to SRTM1 / GLO-90 per tile (see scripts/download_dem.py)
     orbit_pass: ASCENDING   # approximation: S1 IW right-looking, ascending -> look east
     near_incidence_deg: 29.1
-    far_incidence_deg: 46.0
+    far_incidence_deg: 46.0

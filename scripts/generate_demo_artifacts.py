@@ -88,18 +88,13 @@ def _compute_stats(mask: np.ndarray, scene: Path) -> Tuple[float, float]:
     return round(flood * px_km2, 2), round(100.0 * flood / (h * w), 2)
 
 
-def _process(
-    loc: Dict[str, Any],
+def process_scene(
     scene: Path,
-    output_dir: Path,
+    out_dir: Path,
     model: Any,
     device: str,
     cfg: Config,
-) -> Dict[str, Any]:
-    loc_id = loc["id"]
-    logger.info("--- %s (%s)", loc_id, loc["name"])
-
-    out_dir = output_dir / loc_id
+) -> Tuple[float, float]:
     out_dir.mkdir(parents=True, exist_ok=True)
 
     # Inference
@@ -113,7 +108,6 @@ def _process(
     flood = binarize(prob_map, threshold=cfg.inference.threshold)
 
     # Permanent-water (opt-in; off unless config sets inference.permanent_water)
-    permanent_water_url = None
     if cfg.inference.permanent_water is not None:
         pw = cfg.inference.permanent_water
         gsw_dir = Path(pw.gsw_dir)
@@ -122,10 +116,8 @@ def _process(
         flood = subtract_permanent_water(flood, perm)
         write_geotiff(perm, scene, out_dir / "permanent_water.tif")
         _mask_to_png(perm, _WATER_RGBA, out_dir / "permanent_water.png")
-        permanent_water_url = f"/data/{loc_id}/permanent_water.png"
 
     # Layover/shadow (opt-in; off unless config sets inference.layover_shadow)
-    layover_shadow_url = None
     if cfg.inference.layover_shadow is not None:
         ls = cfg.inference.layover_shadow
         dem_dir = Path(ls.dem_dir)
@@ -137,7 +129,6 @@ def _process(
         invalid_u8 = invalid.astype(np.uint8)
         write_geotiff(invalid_u8, scene, out_dir / "layover_shadow.tif")
         _mask_to_png(invalid_u8, _LAYOVER_SHADOW_RGBA, out_dir / "layover_shadow.png")
-        layover_shadow_url = f"/data/{loc_id}/layover_shadow.png"
 
     # Statistics
     area_km2, pct = _compute_stats(flood, scene)
@@ -151,18 +142,7 @@ def _process(
 
     logger.info("  flooded_area_km2=%.2f  flooded_pct=%.2f%%", area_km2, pct)
 
-    return {
-        **loc,
-        "center": center,
-        "bounds": bounds,
-        "flooded_area_km2": area_km2,
-        "flooded_pct": pct,
-        "mask_url":           f"/data/{loc_id}/flood_mask.png",
-        "geotiff_url":        f"/data/{loc_id}/flood_mask.tif",
-        "sar_url":            f"/data/{loc_id}/sar.png",
-        "permanent_water_url": permanent_water_url,
-        "layover_shadow_url": layover_shadow_url,
-    }
+    return area_km2, pct, bounds, center
 
 
 def _parse_args() -> argparse.Namespace:
@@ -215,15 +195,52 @@ def main() -> None:
     model  = _load_model(cfg, device)
     logger.info("Loaded model on %s", device)
 
-    processed = {
-        loc["id"]: _process(loc, scene_dir / f"{loc['id']}.tif", output_dir, model, device, cfg)
-        for loc in have_scene
-    }
-    updated = [processed.get(loc["id"], loc) for loc in locations]
+    updated = []
+    for loc in locations:
+        if loc not in have_scene:
+            updated.append(loc)
+            continue
+        scene = scene_dir / f"{loc['id']}.tif"
+        loc_id = loc["id"]
+        logger.info("--- %s (%s)", loc_id, loc.get("name", ""))
+        
+        # Use existing date if available, otherwise 'latest'
+        date_str = loc.get("scenes", [{}])[0].get("date", "latest")
+        scene_out_dir = output_dir / loc_id / date_str
+        
+        area_km2, pct, bounds, center = process_scene(scene, scene_out_dir, model, device, cfg)
+        
+        new_scene = {
+            "scene_id": loc.get("scenes", [{}])[0].get("scene_id", f"local_{date_str}"),
+            "date": date_str,
+            "flooded_area_km2": area_km2,
+            "flooded_pct": pct,
+            "mask_url":    f"/data/{loc_id}/{date_str}/flood_mask.png",
+            "sar_url":     f"/data/{loc_id}/{date_str}/sar.png",
+            "geotiff_url": f"/data/{loc_id}/{date_str}/flood_mask.tif",
+        }
+        if cfg.inference.permanent_water is not None:
+            new_scene["permanent_water_url"] = f"/data/{loc_id}/{date_str}/permanent_water.png"
+        if cfg.inference.layover_shadow is not None:
+            new_scene["layover_shadow_url"] = f"/data/{loc_id}/{date_str}/layover_shadow.png"
 
-    with locations_path.open("w", encoding="utf-8") as f:
+        loc["center"] = center
+        loc["bounds"] = bounds
+        
+        if loc.get("scenes"):
+            loc["scenes"][0].update(new_scene)
+        else:
+            loc["scenes"] = [new_scene]
+        updated.append(loc)
+
+    import tempfile
+    import os
+    # Atomic write to avoid corruption
+    tmp_path = locations_path.with_suffix(".json.tmp")
+    with tmp_path.open("w", encoding="utf-8") as f:
         json.dump(updated, f, indent=2, ensure_ascii=False)
         f.write("\n")
+    os.replace(tmp_path, locations_path)
 
 if __name__ == "__main__":
     main()

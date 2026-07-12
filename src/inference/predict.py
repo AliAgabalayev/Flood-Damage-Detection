@@ -9,8 +9,8 @@ import numpy as np
 import torch
 from torch import Tensor
 
-from data.preprocessing import default_preprocessor, layover_shadow_mask
-from inference.permanent_water import permanent_water_mask
+from data.preprocessing import default_preprocessor, layover_shadow_mask, mask_layover_shadow
+from inference.permanent_water import permanent_water_mask, subtract_permanent_water
 from inference.stitching import MaskTile, binarize, stitch_tiles, verify_overlay, write_geotiff
 from inference.tiling import TileRecord, generate_tiles
 from training.lightning_module import FloodModel
@@ -67,6 +67,16 @@ def _parse_args() -> argparse.Namespace:
             "(requires inference.layover_shadow in config)."
         ),
     )
+    ap.add_argument(
+        "--no-permanent-water",
+        action="store_true",
+        help="Disable permanent-water fusion, even if it is enabled in the config.",
+    )
+    ap.add_argument(
+        "--no-layover-shadow",
+        action="store_true",
+        help="Disable layover/shadow fusion, even if it is enabled in the config.",
+    )
     return ap.parse_args()
 
 def _select_device(cfg: Config) -> str:
@@ -113,6 +123,8 @@ def predict(
     prob_output_path: Path | None = None,
     permanent_water_output_path: Path | None = None,
     layover_shadow_output_path: Path | None = None,
+    no_permanent_water: bool = False,
+    no_layover_shadow: bool = False,
 ) -> Path:
     if not scene_path.exists():
         raise SystemExit(f"Input scene not found: {scene_path}")
@@ -146,6 +158,26 @@ def predict(
     prob_map = stitch_tiles(mask_tiles, scene_shape)
 
     binary_mask = binarize(prob_map, threshold=cfg.inference.threshold)
+
+    permanent = None
+    if cfg.inference.permanent_water is not None and not no_permanent_water:
+        pw = cfg.inference.permanent_water
+        permanent = permanent_water_mask(scene_path, pw.gsw_dir, pw.occurrence_threshold)
+        binary_mask = subtract_permanent_water(binary_mask, permanent)
+        logger.info(
+            "Fused permanent water mask (occurrence threshold %d).",
+            pw.occurrence_threshold
+        )
+
+    invalid = None
+    if cfg.inference.layover_shadow is not None and not no_layover_shadow:
+        ls = cfg.inference.layover_shadow
+        invalid = layover_shadow_mask(
+            scene_path, ls.dem_dir, ls.orbit_pass, ls.near_incidence_deg, ls.far_incidence_deg
+        )
+        binary_mask = mask_layover_shadow(binary_mask, invalid)
+        logger.info("Fused layover/shadow mask (%d px flagged).", int(invalid.sum()))
+
     flood_pixels = int(binary_mask.sum())
     logger.info(
         "Threshold %.2f applied — %d flood pixel(s) detected (%.2f%% of scene).",
@@ -169,7 +201,8 @@ def predict(
                 "--permanent-water-output requires inference.permanent_water to be set in config."
             )
         pw = cfg.inference.permanent_water
-        permanent = permanent_water_mask(scene_path, pw.gsw_dir, pw.occurrence_threshold)
+        if permanent is None:
+            permanent = permanent_water_mask(scene_path, pw.gsw_dir, pw.occurrence_threshold)
         pw_out = write_geotiff(permanent, scene_path, permanent_water_output_path)
         verify_overlay(pw_out, scene_path)
         logger.info("Permanent-water mask written to: %s", pw_out)
@@ -180,9 +213,10 @@ def predict(
                 "--layover-shadow-output requires inference.layover_shadow to be set in config."
             )
         ls = cfg.inference.layover_shadow
-        invalid = layover_shadow_mask(
-            scene_path, ls.dem_dir, ls.orbit_pass, ls.near_incidence_deg, ls.far_incidence_deg
-        )
+        if invalid is None:
+            invalid = layover_shadow_mask(
+                scene_path, ls.dem_dir, ls.orbit_pass, ls.near_incidence_deg, ls.far_incidence_deg
+            )
         ls_out = write_geotiff(invalid.astype(np.uint8), scene_path, layover_shadow_output_path)
         verify_overlay(ls_out, scene_path)
         logger.info("Layover/shadow mask written to: %s", ls_out)
@@ -210,6 +244,8 @@ def main() -> None:
         layover_shadow_output_path=(
             Path(args.layover_shadow_output) if args.layover_shadow_output else None
         ),
+        no_permanent_water=args.no_permanent_water,
+        no_layover_shadow=args.no_layover_shadow,
     )
     print(f"Done. Flood mask saved to: {out}")
 
