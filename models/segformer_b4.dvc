@@ -1,0 +1,6 @@
+outs:
+- md5: 40f212ff9bf357d43d05a402161008a8.dir
+  size: 1538231341
+  nfiles: 2
+  hash: md5
+  path: segformer_b4
