@@ -36,25 +36,29 @@ def permanent_water_mask(
         src = rasterio.open(t)
         sources.append(src)
 
-    mosaic, mosaic_transformers = merge(sources)
+    gsw_crs = sources[0].crs
+    gsw_nodata = sources[0].nodata if sources[0].nodata is not None else 255.0
+
+    mosaic, mosaic_transformers = merge(sources, nodata=gsw_nodata)
 
     for src in sources:
         src.close()
 
-    gsw_crs = rasterio.open(intersecting_areas[0]).crs
-
-    dest = np.zeros(scene_shape, dtype=np.float32)
+    dest = np.full(scene_shape, gsw_nodata, dtype=np.float32)
     reproject(
         source=mosaic[0],
         destination=dest,
         src_transform=mosaic_transformers,
         src_crs=gsw_crs,
+        src_nodata=gsw_nodata,
         dst_transform=scene_transform,
         dst_crs=scene_crs,
+        dst_nodata=gsw_nodata,
         resampling=Resampling.bilinear,
     )
 
-    return (dest >= occurrence_threshold).astype(np.uint8)
+    valid = dest != gsw_nodata
+    return ((dest >= occurrence_threshold) & valid).astype(np.uint8)
 
 
 def subtract_permanent_water(flood_mask: np.ndarray, permanent_mask: np.ndarray) -> np.ndarray:
