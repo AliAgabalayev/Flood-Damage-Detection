@@ -15,7 +15,7 @@ from PIL import Image
 _PROJECT_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(_PROJECT_ROOT / "src"))
 
-from data.preprocessing import default_preprocessor
+from data.preprocessing import default_preprocessor, layover_shadow_mask, mask_layover_shadow
 from inference.permanent_water import permanent_water_mask, subtract_permanent_water
 from inference.predict import _load_model, _run_tile_inference, _select_device
 from inference.stitching import binarize, stitch_tiles, write_geotiff
@@ -28,6 +28,8 @@ logger = logging.getLogger(__name__)
 _FLOOD_RGBA: Tuple[int, int, int, int] = (200, 98, 42, 153)
 # Permanent-water overlay colour: blue at 60 % opacity.
 _WATER_RGBA: Tuple[int, int, int, int] = (30, 100, 200, 153)
+# Layover/shadow overlay colour: grey at 60 % opacity.
+_LAYOVER_SHADOW_RGBA: Tuple[int, int, int, int] = (120, 120, 120, 153)
 
 
 def _require(path: Path, label: str) -> None:
@@ -106,7 +108,6 @@ def process_scene(
     flood = binarize(prob_map, threshold=cfg.inference.threshold)
 
     # Permanent-water (opt-in; off unless config sets inference.permanent_water)
-    permanent_water_url = None
     if cfg.inference.permanent_water is not None:
         pw = cfg.inference.permanent_water
         gsw_dir = Path(pw.gsw_dir)
@@ -115,6 +116,19 @@ def process_scene(
         flood = subtract_permanent_water(flood, perm)
         write_geotiff(perm, scene, out_dir / "permanent_water.tif")
         _mask_to_png(perm, _WATER_RGBA, out_dir / "permanent_water.png")
+
+    # Layover/shadow (opt-in; off unless config sets inference.layover_shadow)
+    if cfg.inference.layover_shadow is not None:
+        ls = cfg.inference.layover_shadow
+        dem_dir = Path(ls.dem_dir)
+        _require(dem_dir, "Copernicus DEM directory")
+        invalid = layover_shadow_mask(
+            scene, dem_dir, ls.orbit_pass, ls.near_incidence_deg, ls.far_incidence_deg
+        )
+        flood = mask_layover_shadow(flood, invalid)
+        invalid_u8 = invalid.astype(np.uint8)
+        write_geotiff(invalid_u8, scene, out_dir / "layover_shadow.tif")
+        _mask_to_png(invalid_u8, _LAYOVER_SHADOW_RGBA, out_dir / "layover_shadow.png")
 
     # Statistics
     area_km2, pct = _compute_stats(flood, scene)
@@ -207,7 +221,9 @@ def main() -> None:
         }
         if cfg.inference.permanent_water is not None:
             new_scene["permanent_water_url"] = f"/data/{loc_id}/{date_str}/permanent_water.png"
-            
+        if cfg.inference.layover_shadow is not None:
+            new_scene["layover_shadow_url"] = f"/data/{loc_id}/{date_str}/layover_shadow.png"
+
         loc["center"] = center
         loc["bounds"] = bounds
         

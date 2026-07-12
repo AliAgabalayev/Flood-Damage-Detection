@@ -1,0 +1,6 @@
+outs:
+- md5: f43cbf7beac17c2925ec5628f298f53f.dir
+  size: 146202995
+  nfiles: 5
+  hash: md5
+  path: dem

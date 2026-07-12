@@ -85,12 +85,29 @@ class PermanentWaterConfig(_Base):
     occurrence_threshold: float = Field(50.0, ge=0.0, le=100.0)
 
 
+class LayoverShadowConfig(_Base):
+    dem_dir: str = "data/reference/dem"
+    orbit_pass: Literal["ASCENDING", "DESCENDING"] = "ASCENDING"
+    near_incidence_deg: float = Field(29.1, gt=0.0, lt=90.0)
+    far_incidence_deg: float = Field(46.0, gt=0.0, lt=90.0)
+
+    @model_validator(mode="after")
+    def _check_incidence_range(self) -> "LayoverShadowConfig":
+        if self.near_incidence_deg >= self.far_incidence_deg:
+            raise ValueError(
+                f"near_incidence_deg ({self.near_incidence_deg}) must be < "
+                f"far_incidence_deg ({self.far_incidence_deg})"
+            )
+        return self
+
+
 class InferenceConfig(_Base):
     checkpoint: str = "models/best.ckpt"
     threshold: float = Field(0.5, ge=0.0, le=1.0)
     tile_size: int = Field(512, gt=0)
     tile_overlap: int = Field(64, ge=0)
     permanent_water: Optional[PermanentWaterConfig] = None
+    layover_shadow: Optional[LayoverShadowConfig] = None
 
 
 class Config(_Base):

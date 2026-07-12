@@ -163,7 +163,74 @@ The set combines **two Azerbaijan sites** (evaluated against independently acqui
 
 ---
 
-## 5. References
+## 5. DEM-Derived Layover/Shadow Masking (G24)
+
+**Date:** 2026-07-12
+
+A DEM-derived local-incidence-angle mask now flags Sentinel-1 pixels affected by
+radar layover or shadow before they reach the model or are scored
+(`src/data/preprocessing.py::layover_shadow_mask`). Terrain slope/aspect is
+computed from a Copernicus DEM mosaic reprojected onto the scene grid; the local
+incidence angle is derived from slope, aspect, and the sensor's look geometry
+(mid-swath IW incidence angle 29.1°–46.0°, look azimuth from `orbit_pass`).
+Layover is flagged where local incidence ≤ 0°, shadow where it is ≥ 90°.
+
+**DEM source and a real coverage gap.** DEM tiles are pulled by
+`scripts/download_dem.py` in three tiers, per 1°×1° tile: Copernicus GLO-30
+(30 m, preferred) → SRTM1 (30 m, public "Skadi" mirror) → Copernicus GLO-90
+(90 m, last resort). While building this feature we found that **GLO-30 has no
+coverage over Azerbaijan**: tiles `Copernicus_DSM_COG_10_N40_00_E049_00_DEM`
+(Baku) and `Copernicus_DSM_COG_10_N40_00_E048_00_DEM` (Sabirabad) both 404 on
+the GLO-30 bucket, while neighboring tiles at the same latitude (e.g. `E042`,
+`E051`) exist. We checked whether SRTM1 fills this specific gap — it does:
+both tiles are served (void-free) from the public
+`elevation-tiles-prod` Skadi mirror at true 30 m, confirmed by opening the
+raw `.hgt` (3601×3601, 1 arc-second). `download_dem.py` now converts that to a
+GeoTIFF with the SRTM nodata sentinel (`-32768`) preserved, so both Azerbaijan
+sites run on genuine 30 m terrain like the rest of the fixed set — no need to
+fall back to GLO-90 at all. GLO-90 remains wired in as a final safety net for
+any tile outside both Copernicus GLO-30 and SRTM1 coverage (e.g. high-latitude
+scenes beyond SRTM's ±60° limit).
+
+Because SRTM (unlike Copernicus GLO-30/90, which are void-filled globally) can
+have real data voids in steep or arid terrain, `layover_shadow_mask` treats
+"no valid DEM data here" as its own invalid condition — void pixels, and their
+immediate neighbors (whose slope/aspect would otherwise be computed from a
+contaminated gradient), are flagged alongside true layover/shadow pixels
+rather than silently producing a fake, extreme slope. Neither Azerbaijan tile
+has any void in practice, but this matters for other Sen1Floods11 countries
+with steeper relief (e.g. Himalayan foothills).
+
+**Effect on the two Azerbaijan sites.** Within the fixed 512×512 evaluation
+footprints, using the true 30 m SRTM1 terrain:
+
+| Site | DEM resolution | Elevation range | Max slope | Layover/shadow |
+|---|---|---|---|---|
+| Baku | SRTM1 (30 m) | 2.5–67.8 m | ~48.1° | 0.003% (~8 px) |
+| Sabirabad | SRTM1 (30 m) | -25.2–-4.1 m | ~21.6° | 0.00% |
+
+Sabirabad is a flat river floodplain and stays well inside the ~29–46°
+incidence window, so it doesn't exercise the mask. Baku is more interesting:
+at 90 m resolution (the earlier GLO-90 fallback) its max slope measured only
+~10.7°, well below the incidence window — but the true 30 m terrain shows
+slopes up to ~48.1°, which does exceed it, flagging a small (~8 pixel) urban
+area. In other words, **the coarser DEM was silently smoothing away real,
+mask-relevant terrain in exactly the city the project targets** — a concrete
+demonstration of why the GLO-30/SRTM1 fallback (rather than settling for
+GLO-90) mattered here. The surrounding Absheron/Caucasus foothills, within the
+same 1°×1° tile, reach elevations over 1,500 m and slopes past 48° — if the
+Baku AOI is ever widened toward those hills, expect a much larger flagged
+fraction.
+
+**Known approximations.** No per-scene orbit state vectors are available for
+these exports (`scripts/pull_s1_scene.py` does not capture
+`orbitProperties_pass`), so `orbit_pass` is a config-level assumption
+(`ASCENDING` by default) rather than a per-scene fact, and the incidence angle
+uses the fixed IW mid-swath value rather than a true per-pixel range-dependent
+angle. Both are documented, overridable knobs
+(`config/default.yaml: inference.layover_shadow`), not hidden constants.
+
+## 6. References
 
 1. Bonafilia, D., Tellman, B., Anderson, T., Issenberg, E. (2020). *Sen1Floods11: A Georeferenced Dataset to Train and Test Deep Learning Flood Algorithms for Sentinel-1.* CVPR Workshops 2020.
    http://openaccess.thecvf.com/content_CVPRW_2020/html/w11/Bonafilia_Sen1Floods11_A_Georeferenced_Dataset_to_Train_and_Test_Deep_Learning_CVPRW_2020_paper.html

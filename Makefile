@@ -14,7 +14,7 @@ help:
 	@echo "config     validate config/default.yaml"
 	@echo "train      train baseline (DeepLabV3+)"
 	@echo "eval       evaluate a checkpoint on a split"
-	@echo "predict    tiled predict to GeoTIFF (INPUT=.. OUTPUT=.. PROB=<optional prob GeoTIFF> PERMANENT_WATER=<optional permanent-water mask GeoTIFF> NO_PERMANENT_WATER=1)"
+	@echo "predict    tiled predict to GeoTIFF (INPUT=.. OUTPUT=.. PROB=<optional prob GeoTIFF> PERMANENT_WATER=<optional permanent-water mask GeoTIFF> LAYOVER_SHADOW=<optional layover/shadow mask GeoTIFF> NO_PERMANENT_WATER=1 NO_LAYOVER_SHADOW=1)"
 	@echo "demo-artifacts  regenerate web/public/data/<id> mask/SAR PNGs + GeoTIFF for locations with a scene in data/demo_scenes"
 	@echo "finalists  run M1b loss finalists (ONLY=<run_name> for a single run)"
 	@echo "download-weak-data  download Sen1Floods11 weak-labeled chips (~6.8 GiB)"
@@ -45,7 +45,9 @@ predict:
 		--config $(CONFIG) \
 		$(if $(PROB),--prob-output $(PROB),) \
 		$(if $(PERMANENT_WATER),--permanent-water-output $(PERMANENT_WATER),) \
-		$(if $(NO_PERMANENT_WATER),--no-permanent-water,)
+		$(if $(LAYOVER_SHADOW),--layover-shadow-output $(LAYOVER_SHADOW),) \
+		$(if $(NO_PERMANENT_WATER),--no-permanent-water,) \
+		$(if $(NO_LAYOVER_SHADOW),--no-layover-shadow,)
 
 demo-artifacts:
 	$(PY) scripts/generate_demo_artifacts.py --config $(CONFIG)
