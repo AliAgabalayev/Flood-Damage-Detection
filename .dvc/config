@@ -1,6 +1,6 @@
 [cache]
     type = "reflink,hardlink,symlink,copy"
 [core]
-    remote = localremote
-['remote "localremote"']
-    url = /home/aliagabalayev/Desktop/Workspace/.dvc-remote-flood
+    remote = gdrive
+['remote "gdrive"']
+    url = gdrive://1qInGDZIke-ct01Xgf6bHPSH1h_XVt3yW

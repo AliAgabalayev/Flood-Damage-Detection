@@ -94,8 +94,8 @@ export default async function LocationPage({ params }: { params: Promise<{ id: s
           style={{ background: "#faf8f4", borderTop: "1px solid #e8e2d8" }}
         >
           {[
-            { value: `${latestScene.flooded_area_km2} km2`, label: "Flooded area", accent: true },
-            { value: `${latestScene.flooded_pct}%`, label: "Of location", accent: false },
+            { value: latestScene.flooded_area_km2 !== null ? `${latestScene.flooded_area_km2} km2` : "Pending", label: "Flooded area", accent: true },
+            { value: latestScene.flooded_pct !== null ? `${latestScene.flooded_pct}%` : "Pending", label: "Of location", accent: false },
             { value: latestScene.date, label: "Scene date", accent: false },
             { value: location.model, label: "Model", accent: false },
           ].map((stat, i) => (
@@ -125,8 +125,12 @@ export default async function LocationPage({ params }: { params: Promise<{ id: s
           <div className="flex items-center gap-6">
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-1.5">
-                <div style={{ width: 10, height: 10, borderRadius: 2, background: "#c8622a", opacity: 0.5 }} />
-                <span className="text-xs" style={{ color: "#7a7060" }}>Water</span>
+                <div style={{ width: 10, height: 10, borderRadius: 2, background: "#c8bfb0" }} />
+                <span className="text-xs" style={{ color: "#7a7060" }}>Land</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <div style={{ width: 10, height: 10, borderRadius: 2, background: "#2c6a8c", opacity: 0.55 }} />
+                <span className="text-xs" style={{ color: "#7a7060" }}>Permanent water (JRC)</span>
               </div>
               <div className="flex items-center gap-1.5">
                 <div style={{ width: 10, height: 10, borderRadius: 2, background: "#c8bfb0" }} />
@@ -142,17 +146,17 @@ export default async function LocationPage({ params }: { params: Promise<{ id: s
           <div className="flex items-center gap-2">
             {latestScene.mask_url ? (
               <div className="flex items-center gap-2">
-                
+                <a
                   href={latestScene.mask_url}
-                  <a download={`${location.id}_mask.png`}
+                  download={`${location.id}_mask.png`}
                   className="text-xs font-medium px-3 py-1.5 rounded-lg"
                   style={{ background: "#2c2416", color: "#e8c89a", border: "1px solid #2c2416" }}
                 >
                   Download PNG
                 </a>
                 {latestScene.geotiff_url && (
-                  
-                    <a href={latestScene.geotiff_url}
+                  <a
+                    href={latestScene.geotiff_url}
                     download={`${location.id}_mask.tif`}
                     className="text-xs font-medium px-3 py-1.5 rounded-lg"
                     style={{ background: "#faf8f4", color: "#3c3020", border: "1px solid #e8e2d8" }}

@@ -40,6 +40,32 @@ make mlflow-ui                   # MLflow UI (sqlite:///mlflow.db)
 make dvc-push / make dvc-pull    # data & model versioning
 ```
 
+## Data & model versioning
+
+DVC-tracked data (`data/processed/`, `data/reference/`) and checkpoints
+(`models/best.ckpt`, `models/last.ckpt`, `models/weak_pretrain_finetune/`) are
+stored in a shared Google Drive remote, not locally.
+
+Setup on a new machine (one-time):
+1. Ask the repo owner for: (a) access to the shared Drive folder, and (b) the
+   team's DVC OAuth client ID + secret (not committed to git — DVC's own
+   default shared client gets rate-limited/blocked by Google, so this repo
+   uses a dedicated one instead).
+2. Configure the client locally (writes to the gitignored `.dvc/config.local`,
+   never committed):
+   ```bash
+   dvc remote modify --local gdrive gdrive_client_id <client_id>
+   dvc remote modify --local gdrive gdrive_client_secret <client_secret>
+   ```
+3. Run `make dvc-pull` — a browser opens for a one-time Google OAuth consent;
+   the token is then cached (`~/.cache/pydrive2fs/`) and later calls are
+   non-interactive.
+
+```bash
+make dvc-pull   # fetch tracked data/checkpoints
+make dvc-push   # publish tracked data/checkpoints
+```
+
 ## Project structure
 
 ```
@@ -52,7 +78,7 @@ Flood-Damage-Detection/
 │   ├── processed/          # Sen1Floods11 hand- and weak-labeled chips (DVC-tracked)
 │   └── splits/             # official + weak train/val/test CSVs
 ├── docs/                   # study reports (e.g. loss_study.md)
-├── models/                 # checkpoints (best.ckpt DVC-tracked; rest git-ignored)
+├── models/                 # checkpoints (best.ckpt, last.ckpt, weak_pretrain_finetune/ DVC-tracked; rest git-ignored)
 ├── notebooks/              # EDA + Colab sweep notebooks
 ├── scripts/                # data download, split generation, sweep/pretrain-finetune runners
 ├── src/

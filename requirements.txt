@@ -24,7 +24,7 @@ albumentations==2.0.8
 pydantic==2.13.4      # typed config validation (src/utils/config.py)
 PyYAML==6.0.3
 mlflow==3.14.0        # experiment tracking (sqlite backend)
-dvc==3.67.1           # data + model versioning
+dvc[gdrive]==3.67.1   # data + model versioning (shared remote: Google Drive)
 
 # --- Comparison track: YOLO-seg (Phase 4 / M5) ---
 ultralytics==8.4.76
