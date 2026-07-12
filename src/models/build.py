@@ -13,22 +13,25 @@ ARCHS = {
     "fpn": smp.FPN,
 }
 
-SEGFORMER_CHECKPOINT = "nvidia/mit-b2"
+SEGFORMER_CHECKPOINTS = {
+    "segformer_b2": "nvidia/mit-b2",
+    "segformer_b4": "nvidia/mit-b4",
+}
 
 
-class SegformerB2(nn.Module):
-    def __init__(self, in_channels: int, out_classes: int, pretrained: bool):
+class Segformer(nn.Module):
+    def __init__(self, checkpoint: str, in_channels: int, out_classes: int, pretrained: bool):
         super().__init__()
         if pretrained:
             self.net = SegformerForSemanticSegmentation.from_pretrained(
-                SEGFORMER_CHECKPOINT,
+                checkpoint,
                 num_channels=in_channels,
                 num_labels=out_classes,
                 ignore_mismatched_sizes=True,
             )
         else:
             config = SegformerConfig.from_pretrained(
-                SEGFORMER_CHECKPOINT,
+                checkpoint,
                 num_channels=in_channels,
                 num_labels=out_classes,
             )
@@ -41,8 +44,9 @@ class SegformerB2(nn.Module):
 
 def build_model(cfg: Config) -> nn.Module:
     arch = cfg.model.arch
-    if arch == "segformer_b2":
-        return SegformerB2(
+    if arch in SEGFORMER_CHECKPOINTS:
+        return Segformer(
+            checkpoint=SEGFORMER_CHECKPOINTS[arch],
             in_channels=cfg.model.in_channels,
             out_classes=cfg.model.out_classes,
             pretrained=cfg.model.pretrained,

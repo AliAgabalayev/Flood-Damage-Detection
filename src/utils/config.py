@@ -35,7 +35,7 @@ class DataConfig(_Base):
 
 
 class ModelConfig(_Base):
-    arch: Literal["deeplabv3plus", "deeplabv3", "unet", "unetplusplus", "fpn", "segformer_b2"]
+    arch: Literal["deeplabv3plus", "deeplabv3", "unet", "unetplusplus", "fpn", "segformer_b2", "segformer_b4"]
     backbone: str = "resnet34"
     pretrained: bool = True
     in_channels: int = Field(3, gt=0)
@@ -108,6 +108,7 @@ class InferenceConfig(_Base):
     tile_overlap: int = Field(64, ge=0)
     permanent_water: Optional[PermanentWaterConfig] = None
     layover_shadow: Optional[LayoverShadowConfig] = None
+    tta: bool = False
 
 
 class Config(_Base):

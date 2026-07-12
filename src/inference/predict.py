@@ -13,6 +13,7 @@ from data.preprocessing import default_preprocessor, layover_shadow_mask, mask_l
 from inference.permanent_water import permanent_water_mask, subtract_permanent_water
 from inference.stitching import MaskTile, binarize, stitch_tiles, verify_overlay, write_geotiff
 from inference.tiling import TileRecord, generate_tiles
+from inference.tta import tta_predict
 from training.lightning_module import FloodModel
 from utils.config import Config, load_config
 
@@ -96,6 +97,7 @@ def _run_tile_inference(
     model: FloodModel,
     tiles: List[TileRecord],
     device: str,
+    tta: bool = False,
 ) -> List[MaskTile]:
     mask_tiles: List[MaskTile] = []
 
@@ -103,8 +105,7 @@ def _run_tile_inference(
         for record in tiles:
             # Add batch dimension: (C, H, W) → (1, C, H, W)
             batch: Tensor = record.tile.unsqueeze(0).to(device)
-            logits: Tensor = model(batch)
-            prob: Tensor = torch.sigmoid(logits)
+            prob: Tensor = tta_predict(model, batch) if tta else torch.sigmoid(model(batch))
             prob_2d: Tensor = prob.squeeze(0).squeeze(0)
             mask_tiles.append(
                 MaskTile(
@@ -151,8 +152,8 @@ def predict(
         cfg.inference.tile_overlap,
     )
 
-    logger.info("Running inference over %d tile(s)…", len(tiles))
-    mask_tiles = _run_tile_inference(model, tiles, device)
+    logger.info("Running inference over %d tile(s)%s…", len(tiles), " (TTA)" if cfg.inference.tta else "")
+    mask_tiles = _run_tile_inference(model, tiles, device, tta=cfg.inference.tta)
 
     logger.info("Stitching tiles into full probability map…")
     prob_map = stitch_tiles(mask_tiles, scene_shape)
