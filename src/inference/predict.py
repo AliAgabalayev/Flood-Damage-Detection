@@ -57,6 +57,11 @@ def _parse_args() -> argparse.Namespace:
             "(requires inference.permanent_water in config)."
         ),
     )
+    ap.add_argument(
+        "--no-permanent-water",
+        action="store_true",
+        help="Disable permanent-water fusion, even if it is enabled in the config.",
+    )
     return ap.parse_args()
 
 def _select_device(cfg: Config) -> str:
@@ -102,6 +107,7 @@ def predict(
     cfg: Config,
     prob_output_path: Path | None = None,
     permanent_water_output_path: Path | None = None,
+    no_permanent_water: bool = False,
 ) -> Path:
     if not scene_path.exists():
         raise SystemExit(f"Input scene not found: {scene_path}")
@@ -135,6 +141,18 @@ def predict(
     prob_map = stitch_tiles(mask_tiles, scene_shape)
 
     binary_mask = binarize(prob_map, threshold=cfg.inference.threshold)
+    
+    permanent = None
+    if cfg.inference.permanent_water is not None and not no_permanent_water:
+        pw = cfg.inference.permanent_water
+        permanent = permanent_water_mask(scene_path, pw.gsw_dir, pw.occurrence_threshold)
+        from inference.permanent_water import subtract_permanent_water
+        binary_mask = subtract_permanent_water(binary_mask, permanent)
+        logger.info(
+            "Fused permanent water mask (occurrence threshold %d).",
+            pw.occurrence_threshold
+        )
+
     flood_pixels = int(binary_mask.sum())
     logger.info(
         "Threshold %.2f applied — %d flood pixel(s) detected (%.2f%% of scene).",
@@ -158,7 +176,8 @@ def predict(
                 "--permanent-water-output requires inference.permanent_water to be set in config."
             )
         pw = cfg.inference.permanent_water
-        permanent = permanent_water_mask(scene_path, pw.gsw_dir, pw.occurrence_threshold)
+        if permanent is None:
+            permanent = permanent_water_mask(scene_path, pw.gsw_dir, pw.occurrence_threshold)
         pw_out = write_geotiff(permanent, scene_path, permanent_water_output_path)
         verify_overlay(pw_out, scene_path)
         logger.info("Permanent-water mask written to: %s", pw_out)
@@ -183,6 +202,7 @@ def main() -> None:
         permanent_water_output_path=(
             Path(args.permanent_water_output) if args.permanent_water_output else None
         ),
+        no_permanent_water=args.no_permanent_water,
     )
     print(f"Done. Flood mask saved to: {out}")
 

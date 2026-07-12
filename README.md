@@ -101,11 +101,13 @@ Flood-Damage-Detection/
    touched once.
 4. **Infer** — `make predict INPUT=scene.tif OUTPUT=mask.tif` runs a trained
    checkpoint on a full scene, tiling and stitching into a georeferenced
-   flood-mask GeoTIFF. Add `PROB=prob.tif` to also save the per-pixel flood
-   probability as a float32 GeoTIFF. Add `PERMANENT_WATER=permanent_water.tif`
-   (requires `inference.permanent_water` in the config) to also save the JRC
-   permanent-water mask as its own georeferenced GeoTIFF — a separate visual
-   layer for the frontend, not fused into the flood mask.
+   flood-mask GeoTIFF. By default, the JRC permanent-water mask is fused into
+   the predicted flood mask (subtracting permanent water from flooded areas).
+   Add `NO_PERMANENT_WATER=1` (or `--no-permanent-water` on the CLI) to disable
+   this fusion. Add `PROB=prob.tif` to also save the per-pixel flood probability
+   as a float32 GeoTIFF. Add `PERMANENT_WATER=permanent_water.tif` (requires
+   `inference.permanent_water` in the config) to also save the JRC permanent-water
+   mask as its own georeferenced GeoTIFF.
 
 Every run logs to MLflow (params, git SHA, DVC data hash, metrics, checkpoint) —
 see `make mlflow-ui`.
