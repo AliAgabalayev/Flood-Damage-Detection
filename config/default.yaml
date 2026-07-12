@@ -43,4 +43,9 @@ inference:
   tile_overlap: 64
   permanent_water:
     gsw_dir: data/reference/jrc_gsw/occurrence
-    occurrence_threshold: 50
+    occurrence_threshold: 50
+  layover_shadow:
+    dem_dir: data/reference/copernicus_dem
+    orbit_pass: ASCENDING   # approximation: S1 IW right-looking, ascending -> look east
+    near_incidence_deg: 29.1
+    far_incidence_deg: 46.0

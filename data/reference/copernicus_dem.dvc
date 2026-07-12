@@ -1,0 +1,6 @@
+outs:
+- md5: edbdaf9911e7b76f83ce6b8d1baee224.dir
+  size: 134189421
+  nfiles: 5
+  hash: md5
+  path: copernicus_dem

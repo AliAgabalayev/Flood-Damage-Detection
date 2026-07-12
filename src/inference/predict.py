@@ -5,10 +5,11 @@ import logging
 from pathlib import Path
 from typing import List
 
+import numpy as np
 import torch
 from torch import Tensor
 
-from data.preprocessing import default_preprocessor
+from data.preprocessing import default_preprocessor, layover_shadow_mask
 from inference.permanent_water import permanent_water_mask
 from inference.stitching import MaskTile, binarize, stitch_tiles, verify_overlay, write_geotiff
 from inference.tiling import TileRecord, generate_tiles
@@ -57,6 +58,15 @@ def _parse_args() -> argparse.Namespace:
             "(requires inference.permanent_water in config)."
         ),
     )
+    ap.add_argument(
+        "--layover-shadow-output",
+        default=None,
+        metavar="LAYOVER_SHADOW",
+        help=(
+            "Optional destination path for a DEM-derived layover/shadow mask GeoTIFF "
+            "(requires inference.layover_shadow in config)."
+        ),
+    )
     return ap.parse_args()
 
 def _select_device(cfg: Config) -> str:
@@ -102,6 +112,7 @@ def predict(
     cfg: Config,
     prob_output_path: Path | None = None,
     permanent_water_output_path: Path | None = None,
+    layover_shadow_output_path: Path | None = None,
 ) -> Path:
     if not scene_path.exists():
         raise SystemExit(f"Input scene not found: {scene_path}")
@@ -163,6 +174,19 @@ def predict(
         verify_overlay(pw_out, scene_path)
         logger.info("Permanent-water mask written to: %s", pw_out)
 
+    if layover_shadow_output_path is not None:
+        if cfg.inference.layover_shadow is None:
+            raise SystemExit(
+                "--layover-shadow-output requires inference.layover_shadow to be set in config."
+            )
+        ls = cfg.inference.layover_shadow
+        invalid = layover_shadow_mask(
+            scene_path, ls.dem_dir, ls.orbit_pass, ls.near_incidence_deg, ls.far_incidence_deg
+        )
+        ls_out = write_geotiff(invalid.astype(np.uint8), scene_path, layover_shadow_output_path)
+        verify_overlay(ls_out, scene_path)
+        logger.info("Layover/shadow mask written to: %s", ls_out)
+
     return out
 
 def main() -> None:
@@ -182,6 +206,9 @@ def main() -> None:
         prob_output_path=Path(args.prob_output) if args.prob_output else None,
         permanent_water_output_path=(
             Path(args.permanent_water_output) if args.permanent_water_output else None
+        ),
+        layover_shadow_output_path=(
+            Path(args.layover_shadow_output) if args.layover_shadow_output else None
         ),
     )
     print(f"Done. Flood mask saved to: {out}")

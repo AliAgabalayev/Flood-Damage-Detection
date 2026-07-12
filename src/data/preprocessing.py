@@ -1,13 +1,19 @@
 from __future__ import annotations
 
+from pathlib import Path
 from typing import Callable, List, Tuple
 
 import numpy as np
+import rasterio
+from rasterio.merge import merge
+from rasterio.warp import reproject, Resampling
 
 
 ChannelBuilder = Callable[[np.ndarray], np.ndarray]
 
 ClipRange = Tuple[float, float]
+
+LOOK_AZIMUTH_DEG = {"ASCENDING": 90.0, "DESCENDING": 270.0}
 
 def build_vv(image: np.ndarray) -> np.ndarray:
     return image[0].astype(np.float32)
@@ -63,10 +69,91 @@ class Preprocessor:
 
 def default_preprocessor(config: object) -> Preprocessor:
     #Build the canonical ``[VV, VH, Ratio]`` preprocessor from a config object.
-    data_cfg = config.data 
+    data_cfg = config.data
     specs: List[Tuple[ChannelBuilder, ClipRange]] = [
         (build_vv,    tuple(data_cfg.vv_clip)),     # channel 0
         (build_vh,    tuple(data_cfg.vh_clip)),     # channel 1
         (build_ratio, tuple(data_cfg.ratio_clip)),  # channel 2
     ]
-    return Preprocessor(specs) 
+    return Preprocessor(specs)
+
+
+def _mosaic_dem(dem_dir: Path, scene_crs, scene_transform, scene_shape: Tuple[int, int], scene_bounds) -> np.ndarray:
+    intersecting = []
+    for tif in dem_dir.glob("*.tif"):
+        with rasterio.open(tif) as src:
+            b = src.bounds
+            if not (b.right < scene_bounds.left or b.left > scene_bounds.right or b.top < scene_bounds.bottom or b.bottom > scene_bounds.top):
+                intersecting.append(tif)
+
+    if not intersecting:
+        raise FileNotFoundError(f"No DEM tiles in {dem_dir} intersect the scene bounds {tuple(scene_bounds)}.")
+
+    sources = [rasterio.open(t) for t in intersecting]
+    mosaic, mosaic_transform = merge(sources)
+    dem_crs = sources[0].crs
+    for src in sources:
+        src.close()
+
+    dest = np.zeros(scene_shape, dtype=np.float32)
+    reproject(
+        source=mosaic[0],
+        destination=dest,
+        src_transform=mosaic_transform,
+        src_crs=dem_crs,
+        dst_transform=scene_transform,
+        dst_crs=scene_crs,
+        resampling=Resampling.bilinear,
+    )
+    return dest
+
+
+def _pixel_spacing_m(transform, bounds) -> Tuple[float, float]:
+    mid_lat_rad = np.radians((bounds.top + bounds.bottom) / 2.0)
+    dx = abs(transform.a) * 111_320.0 * np.cos(mid_lat_rad)
+    dy = abs(transform.e) * 110_540.0
+    return dx, dy
+
+
+def _slope_aspect(dem: np.ndarray, dx: float, dy: float) -> Tuple[np.ndarray, np.ndarray]:
+    grad_y, grad_x = np.gradient(dem, dy, dx)
+    slope = np.arctan(np.hypot(grad_x, grad_y))
+    aspect = np.arctan2(-grad_x, grad_y) % (2.0 * np.pi)
+    return slope, aspect
+
+
+def layover_shadow_mask(
+    scene_path: Path | str,
+    dem_dir: Path | str,
+    orbit_pass: str,
+    near_incidence_deg: float,
+    far_incidence_deg: float,
+) -> np.ndarray:
+    scene_path = Path(scene_path)
+    dem_dir = Path(dem_dir)
+
+    with rasterio.open(scene_path) as scene:
+        scene_crs = scene.crs
+        scene_transform = scene.transform
+        scene_shape = (scene.height, scene.width)
+        scene_bounds = scene.bounds
+
+    dem = _mosaic_dem(dem_dir, scene_crs, scene_transform, scene_shape, scene_bounds)
+    dx, dy = _pixel_spacing_m(scene_transform, scene_bounds)
+    slope, aspect = _slope_aspect(dem, dx, dy)
+
+    incidence = np.radians((near_incidence_deg + far_incidence_deg) / 2.0)
+    look_azimuth = np.radians(LOOK_AZIMUTH_DEG[orbit_pass])
+
+    range_slope = np.arctan(np.tan(slope) * np.cos(look_azimuth - aspect))
+    local_incidence = incidence - range_slope
+
+    layover = local_incidence <= 0.0
+    shadow = local_incidence >= (np.pi / 2.0)
+    return layover | shadow
+
+
+def mask_layover_shadow(flood_mask: np.ndarray, invalid_mask: np.ndarray) -> np.ndarray:
+    if flood_mask.shape != invalid_mask.shape:
+        raise ValueError(f"flood_mask shape {flood_mask.shape} != invalid_mask shape {invalid_mask.shape}")
+    return (flood_mask.astype(bool) & ~invalid_mask.astype(bool)).astype(np.uint8)
