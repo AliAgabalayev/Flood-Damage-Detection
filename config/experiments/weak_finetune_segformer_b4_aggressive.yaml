@@ -1,0 +1,47 @@
+seed: 42
+
+data:
+  root: data/processed/sen1floods11
+  s1_subdir: S1Hand
+  label_subdir: LabelHand
+  split_dir: data/splits/official
+  image_size: 512
+  num_workers: 4
+  vv_clip: [-25.0, 0.0]
+  vh_clip: [-35.0, 0.0]
+  ratio_clip: [0.0, 18.0]
+  augment: true
+
+model:
+  arch: segformer_b4
+  backbone: nvidia/mit-b4
+  pretrained: true
+  in_channels: 3
+  out_classes: 1
+
+training:
+  batch_size: 2
+  accumulate_grad_batches: 4
+  precision: 16-mixed
+  epochs: 80
+  lr: 0.00005
+  optimizer: adamw
+  loss: dice_bce
+  bce_weight: 1.0
+  dice_weight: 1.0
+  pos_weight: null
+  early_stopping_patience: null
+  device: cuda
+  checkpoint_dir: models/segformer_b4_aggressive/finetune
+
+mlflow:
+  tracking_uri: sqlite:///mlflow.db
+  artifact_location: mlruns
+  experiment: flood-water-seg/segformer_b4_aggressive
+
+inference:
+  checkpoint: models/segformer_b4_aggressive/finetune/best.ckpt
+  threshold: 0.5
+  tile_size: 512
+  tile_overlap: 64
+  tta: true

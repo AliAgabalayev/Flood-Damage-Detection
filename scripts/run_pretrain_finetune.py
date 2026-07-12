@@ -43,14 +43,14 @@ def main() -> None:
     else:
         pretrain_cfg = load_config(args.pretrain_config)
         print("===== Stage 1: pretrain on weak labels =====")
-        pretrain_result = run_training(pretrain_cfg, run_name="pretrain_resnet50_dice")
+        pretrain_result = run_training(pretrain_cfg, run_name=f"pretrain_{pretrain_cfg.model.arch}_{pretrain_cfg.training.loss}")
         print("pretrain result:", pretrain_result)
         pretrain_ckpt = f"{pretrain_cfg.training.checkpoint_dir}/best.ckpt"
 
     finetune_cfg = load_config(args.finetune_config)
     print("\n===== Stage 2: fine-tune on hand labels =====")
     finetune_result = run_training(
-        finetune_cfg, run_name="finetune_resnet50_dice",
+        finetune_cfg, run_name=f"finetune_{finetune_cfg.model.arch}_{finetune_cfg.training.loss}",
         init_weights=pretrain_ckpt, evaluate_test=args.evaluate_test,
     )
     print("finetune result:", finetune_result)
