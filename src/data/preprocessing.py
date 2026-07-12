@@ -78,7 +78,7 @@ def default_preprocessor(config: object) -> Preprocessor:
     return Preprocessor(specs)
 
 
-def _mosaic_dem(dem_dir: Path, scene_crs, scene_transform, scene_shape: Tuple[int, int], scene_bounds) -> np.ndarray:
+def _mosaic_dem(dem_dir: Path, scene_crs, scene_transform, scene_shape: Tuple[int, int], scene_bounds) -> Tuple[np.ndarray, np.ndarray]:
     intersecting = []
     for tif in dem_dir.glob("*.tif"):
         with rasterio.open(tif) as src:
@@ -90,12 +90,14 @@ def _mosaic_dem(dem_dir: Path, scene_crs, scene_transform, scene_shape: Tuple[in
         raise FileNotFoundError(f"No DEM tiles in {dem_dir} intersect the scene bounds {tuple(scene_bounds)}.")
 
     sources = [rasterio.open(t) for t in intersecting]
-    mosaic, mosaic_transform = merge(sources)
+    nodata = sources[0].nodata
+    mosaic, mosaic_transform = merge(sources, nodata=nodata) if nodata is not None else merge(sources)
     dem_crs = sources[0].crs
     for src in sources:
         src.close()
 
-    dest = np.zeros(scene_shape, dtype=np.float32)
+    fill_value = nodata if nodata is not None else 0.0
+    dest = np.full(scene_shape, fill_value, dtype=np.float32)
     reproject(
         source=mosaic[0],
         destination=dest,
@@ -103,9 +105,12 @@ def _mosaic_dem(dem_dir: Path, scene_crs, scene_transform, scene_shape: Tuple[in
         src_crs=dem_crs,
         dst_transform=scene_transform,
         dst_crs=scene_crs,
+        src_nodata=nodata,
+        dst_nodata=nodata,
         resampling=Resampling.bilinear,
     )
-    return dest
+    valid = dest != nodata if nodata is not None else np.ones(scene_shape, dtype=bool)
+    return dest, valid
 
 
 def _pixel_spacing_m(transform, bounds) -> Tuple[float, float]:
@@ -120,6 +125,15 @@ def _slope_aspect(dem: np.ndarray, dx: float, dy: float) -> Tuple[np.ndarray, np
     slope = np.arctan(np.hypot(grad_x, grad_y))
     aspect = np.arctan2(-grad_x, grad_y) % (2.0 * np.pi)
     return slope, aspect
+
+
+def _dilate(mask: np.ndarray) -> np.ndarray:
+    dilated = mask.copy()
+    dilated[1:, :]  |= mask[:-1, :]
+    dilated[:-1, :] |= mask[1:, :]
+    dilated[:, 1:]  |= mask[:, :-1]
+    dilated[:, :-1] |= mask[:, 1:]
+    return dilated
 
 
 def layover_shadow_mask(
@@ -138,7 +152,7 @@ def layover_shadow_mask(
         scene_shape = (scene.height, scene.width)
         scene_bounds = scene.bounds
 
-    dem = _mosaic_dem(dem_dir, scene_crs, scene_transform, scene_shape, scene_bounds)
+    dem, dem_valid = _mosaic_dem(dem_dir, scene_crs, scene_transform, scene_shape, scene_bounds)
     dx, dy = _pixel_spacing_m(scene_transform, scene_bounds)
     slope, aspect = _slope_aspect(dem, dx, dy)
 
@@ -150,7 +164,8 @@ def layover_shadow_mask(
 
     layover = local_incidence <= 0.0
     shadow = local_incidence >= (np.pi / 2.0)
-    return layover | shadow
+    dem_missing = _dilate(~dem_valid)
+    return layover | shadow | dem_missing
 
 
 def mask_layover_shadow(flood_mask: np.ndarray, invalid_mask: np.ndarray) -> np.ndarray:

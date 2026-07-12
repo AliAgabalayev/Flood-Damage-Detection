@@ -86,7 +86,7 @@ class PermanentWaterConfig(_Base):
 
 
 class LayoverShadowConfig(_Base):
-    dem_dir: str = "data/reference/copernicus_dem"
+    dem_dir: str = "data/reference/dem"
     orbit_pass: Literal["ASCENDING", "DESCENDING"] = "ASCENDING"
     near_incidence_deg: float = Field(29.1, gt=0.0, lt=90.0)
     far_incidence_deg: float = Field(46.0, gt=0.0, lt=90.0)

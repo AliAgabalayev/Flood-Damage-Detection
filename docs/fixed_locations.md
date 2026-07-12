@@ -175,32 +175,52 @@ incidence angle is derived from slope, aspect, and the sensor's look geometry
 (mid-swath IW incidence angle 29.1°–46.0°, look azimuth from `orbit_pass`).
 Layover is flagged where local incidence ≤ 0°, shadow where it is ≥ 90°.
 
-**DEM source and a real coverage gap.** DEM tiles are pulled from the public
-Copernicus DEM AWS bucket (`scripts/download_dem.py`), preferring GLO-30 (30 m)
-and falling back to GLO-90 (90 m) per 1°×1° tile. While building this feature we
-found that **GLO-30 has no coverage over Azerbaijan**: tiles
-`Copernicus_DSM_COG_10_N40_00_E049_00_DEM` (Baku) and
-`Copernicus_DSM_COG_10_N40_00_E048_00_DEM` (Sabirabad) both 404 on the GLO-30
-bucket, while neighboring tiles at the same latitude (e.g. `E042`, `E051`) exist.
-GLO-90 covers both, so both fixed Azerbaijan sites currently run on 90 m terrain
-instead of 30 m — coarser slope estimates than the rest of the fixed set.
+**DEM source and a real coverage gap.** DEM tiles are pulled by
+`scripts/download_dem.py` in three tiers, per 1°×1° tile: Copernicus GLO-30
+(30 m, preferred) → SRTM1 (30 m, public "Skadi" mirror) → Copernicus GLO-90
+(90 m, last resort). While building this feature we found that **GLO-30 has no
+coverage over Azerbaijan**: tiles `Copernicus_DSM_COG_10_N40_00_E049_00_DEM`
+(Baku) and `Copernicus_DSM_COG_10_N40_00_E048_00_DEM` (Sabirabad) both 404 on
+the GLO-30 bucket, while neighboring tiles at the same latitude (e.g. `E042`,
+`E051`) exist. We checked whether SRTM1 fills this specific gap — it does:
+both tiles are served (void-free) from the public
+`elevation-tiles-prod` Skadi mirror at true 30 m, confirmed by opening the
+raw `.hgt` (3601×3601, 1 arc-second). `download_dem.py` now converts that to a
+GeoTIFF with the SRTM nodata sentinel (`-32768`) preserved, so both Azerbaijan
+sites run on genuine 30 m terrain like the rest of the fixed set — no need to
+fall back to GLO-90 at all. GLO-90 remains wired in as a final safety net for
+any tile outside both Copernicus GLO-30 and SRTM1 coverage (e.g. high-latitude
+scenes beyond SRTM's ±60° limit).
+
+Because SRTM (unlike Copernicus GLO-30/90, which are void-filled globally) can
+have real data voids in steep or arid terrain, `layover_shadow_mask` treats
+"no valid DEM data here" as its own invalid condition — void pixels, and their
+immediate neighbors (whose slope/aspect would otherwise be computed from a
+contaminated gradient), are flagged alongside true layover/shadow pixels
+rather than silently producing a fake, extreme slope. Neither Azerbaijan tile
+has any void in practice, but this matters for other Sen1Floods11 countries
+with steeper relief (e.g. Himalayan foothills).
 
 **Effect on the two Azerbaijan sites.** Within the fixed 512×512 evaluation
-footprints, the mask flags **0% of pixels** at both sites:
+footprints, using the true 30 m SRTM1 terrain:
 
 | Site | DEM resolution | Elevation range | Max slope | Layover/shadow |
 |---|---|---|---|---|
-| Baku | GLO-90 (fallback) | 8.8–66.5 m | ~10.7° | 0.00% |
-| Sabirabad | GLO-90 (fallback) | -16.5–-8.6 m | ~6.3° | 0.00% |
+| Baku | SRTM1 (30 m) | 2.5–67.8 m | ~48.1° | 0.003% (~8 px) |
+| Sabirabad | SRTM1 (30 m) | -25.2–-4.1 m | ~21.6° | 0.00% |
 
-Both footprints are low-relief (urban-coastal lowland and river floodplain,
-respectively) and stay well inside the ~29–46° incidence window, so neither
-currently exercises the mask. This is not evidence the mask is inert: the
-surrounding Absheron/Caucasus foothills, within the same 1°×1° DEM tile as
-Baku, reach slopes up to ~38.5° and elevations over 1,500 m — enough to trigger
-both layover and shadow. If the Baku AOI is ever widened toward those hills,
-this mask should be re-checked, and a GLO-30 source (or a licensed substitute)
-revisited if finer terrain detail becomes necessary.
+Sabirabad is a flat river floodplain and stays well inside the ~29–46°
+incidence window, so it doesn't exercise the mask. Baku is more interesting:
+at 90 m resolution (the earlier GLO-90 fallback) its max slope measured only
+~10.7°, well below the incidence window — but the true 30 m terrain shows
+slopes up to ~48.1°, which does exceed it, flagging a small (~8 pixel) urban
+area. In other words, **the coarser DEM was silently smoothing away real,
+mask-relevant terrain in exactly the city the project targets** — a concrete
+demonstration of why the GLO-30/SRTM1 fallback (rather than settling for
+GLO-90) mattered here. The surrounding Absheron/Caucasus foothills, within the
+same 1°×1° tile, reach elevations over 1,500 m and slopes past 48° — if the
+Baku AOI is ever widened toward those hills, expect a much larger flagged
+fraction.
 
 **Known approximations.** No per-scene orbit state vectors are available for
 these exports (`scripts/pull_s1_scene.py` does not capture

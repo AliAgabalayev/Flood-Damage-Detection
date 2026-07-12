@@ -1,5 +1,7 @@
 import argparse
+import gzip
 import math
+import shutil
 import urllib.error
 import urllib.request
 from pathlib import Path
@@ -9,6 +11,8 @@ from rasterio.warp import transform_bounds
 
 GLO30_BASE_URL = "https://copernicus-dem-30m.s3.eu-central-1.amazonaws.com"
 GLO90_BASE_URL = "https://copernicus-dem-90m.s3.eu-central-1.amazonaws.com"
+SKADI_BASE_URL = "https://s3.amazonaws.com/elevation-tiles-prod/skadi"
+SRTM_NODATA = -32768.0
 
 
 def chip_bounds(path: Path) -> tuple[float, float, float, float]:
@@ -18,7 +22,7 @@ def chip_bounds(path: Path) -> tuple[float, float, float, float]:
 
 
 def tiles_for_bounds(bounds: tuple[float, float, float, float]) -> set[tuple[int, int]]:
-    """Return all 1deg x 1deg Copernicus DEM tiles intersecting the given bounds."""
+    """Return all 1deg x 1deg DEM tiles intersecting the given bounds."""
     minx, miny, maxx, maxy = bounds
     tiles: set[tuple[int, int]] = set()
     for lon in range(math.floor(minx), math.floor(maxx) + 1):
@@ -39,10 +43,48 @@ def tile_url(lon: int, lat: int, resolution_code: str) -> str:
     return f"{base}/{stem}/{stem}.tif"
 
 
+def skadi_tile_name(lon: int, lat: int) -> str:
+    lon_dir = "E" if lon >= 0 else "W"
+    lat_dir = "N" if lat >= 0 else "S"
+    return f"{lat_dir}{abs(lat):02d}{lon_dir}{abs(lon):03d}"
+
+
+def skadi_url(lon: int, lat: int) -> str:
+    name = skadi_tile_name(lon, lat)
+    return f"{SKADI_BASE_URL}/{name[:3]}/{name}.hgt.gz"
+
+
+def download_srtm_tile(lon: int, lat: int, dest_tif: Path, tmp_dir: Path) -> None:
+    """Download an SRTM1 (Skadi format) tile and convert it to a GeoTIFF with
+    the SRTM nodata sentinel set, so downstream reprojection/merging can
+    correctly exclude void pixels instead of treating them as real elevation."""
+    name = skadi_tile_name(lon, lat)
+    gz_path = tmp_dir / f"{name}.hgt.gz"
+    hgt_path = tmp_dir / f"{name}.hgt"
+
+    urllib.request.urlretrieve(skadi_url(lon, lat), gz_path)
+    try:
+        with gzip.open(gz_path, "rb") as f_in, open(hgt_path, "wb") as f_out:
+            shutil.copyfileobj(f_in, f_out)
+
+        with rasterio.open(hgt_path) as src:
+            profile = src.profile.copy()
+            data = src.read(1)
+
+        profile.update(driver="GTiff", nodata=SRTM_NODATA, compress="deflate")
+        with rasterio.open(dest_tif, "w", **profile) as dst:
+            dst.write(data, 1)
+    finally:
+        gz_path.unlink(missing_ok=True)
+        hgt_path.unlink(missing_ok=True)
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(
-        description="Download Copernicus DEM tiles covering a set of Sentinel-1 scenes. "
-        "Tries GLO-30 first; falls back to GLO-90 where GLO-30 is unavailable (e.g. Azerbaijan)."
+        description="Download DEM tiles covering a set of Sentinel-1 scenes. "
+        "Tries Copernicus GLO-30 first, falls back to SRTM1 (30m, via the public "
+        "Skadi mirror) where GLO-30 is unavailable (e.g. Azerbaijan), then to "
+        "Copernicus GLO-90 (90m) as a last resort."
     )
 
     parser.add_argument(
@@ -57,7 +99,7 @@ def main() -> None:
 
     parser.add_argument(
         "--out-dir",
-        default="data/reference/copernicus_dem",
+        default="data/reference/dem",
     )
 
     parser.add_argument(
@@ -92,19 +134,25 @@ def main() -> None:
     out_dir.mkdir(parents=True, exist_ok=True)
 
     glo30 = 0
+    srtm = 0
     glo90 = 0
     failed = 0
 
     print()
 
     for lon, lat in sorted_tiles:
-        dest = out_dir / f"{tile_stem(lon, lat, '10')}.tif"
-        if dest.exists() and dest.stat().st_size > 0:
-            print(f"✓ exists (GLO-30): {dest.name}")
+        dest30 = out_dir / f"{tile_stem(lon, lat, '10')}.tif"
+        dest_srtm = out_dir / f"SRTM1_{skadi_tile_name(lon, lat)}.tif"
+        dest90 = out_dir / f"{tile_stem(lon, lat, '30')}.tif"
+
+        if dest30.exists() and dest30.stat().st_size > 0:
+            print(f"✓ exists (GLO-30): {dest30.name}")
             glo30 += 1
             continue
-
-        dest90 = out_dir / f"{tile_stem(lon, lat, '30')}.tif"
+        if dest_srtm.exists() and dest_srtm.stat().st_size > 0:
+            print(f"✓ exists (SRTM1): {dest_srtm.name}")
+            srtm += 1
+            continue
         if dest90.exists() and dest90.stat().st_size > 0:
             print(f"✓ exists (GLO-90): {dest90.name}")
             glo90 += 1
@@ -113,12 +161,23 @@ def main() -> None:
         url = tile_url(lon, lat, "10")
         print(f"↓ {url}")
         try:
-            urllib.request.urlretrieve(url, dest)
+            urllib.request.urlretrieve(url, dest30)
             print("  downloaded (GLO-30)")
             glo30 += 1
             continue
         except urllib.error.HTTPError as e:
-            print(f"  GLO-30 unavailable (HTTP {e.code}); trying GLO-90")
+            print(f"  GLO-30 unavailable (HTTP {e.code}); trying SRTM1")
+
+        print(f"↓ {skadi_url(lon, lat)}")
+        try:
+            download_srtm_tile(lon, lat, dest_srtm, out_dir)
+            print("  downloaded (SRTM1)")
+            srtm += 1
+            continue
+        except urllib.error.HTTPError as e:
+            print(f"  SRTM1 unavailable (HTTP {e.code}); trying GLO-90")
+        except Exception as e:
+            print(f"  SRTM1 error: {e}; trying GLO-90")
 
         url = tile_url(lon, lat, "30")
         print(f"↓ {url}")
@@ -135,6 +194,7 @@ def main() -> None:
 
     print("\n-----------------------------------")
     print(f"GLO-30     : {glo30}")
+    print(f"SRTM1      : {srtm}")
     print(f"GLO-90     : {glo90}")
     print(f"Failed     : {failed}")
     print(f"Output dir : {out_dir}")
