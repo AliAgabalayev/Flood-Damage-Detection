@@ -8,6 +8,7 @@ export interface SceneArchive {
   sar_url: string | null;
   geotiff_url: string | null;
   permanent_water_url: string | null;
+  probability_url: string | null;
 }
 
 export interface Location {

@@ -13,8 +13,10 @@ export default function MapView({ location, scene }: Props) {
   const mapInstanceRef = useRef<unknown>(null);
   const overlayRef = useRef<unknown>(null);
   const permanentWaterOverlayRef = useRef<unknown>(null);
+  const confidenceOverlayRef = useRef<unknown>(null);
   const [maskVisible, setMaskVisible] = useState(true);
   const [permanentWaterVisible, setPermanentWaterVisible] = useState(false);
+  const [confidenceVisible, setConfidenceVisible] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [zoomedCell, setZoomedCell] = useState<number | null>(null);
@@ -75,6 +77,12 @@ export default function MapView({ location, scene }: Props) {
           permanentWaterOverlayRef.current = pwOverlay;
         }
 
+        if (scene.probability_url) {
+          const confOverlay = L.imageOverlay(scene.probability_url, bounds, { opacity: 0 });
+          confOverlay.addTo(map as never);
+          confidenceOverlayRef.current = confOverlay;
+        }
+
         mapInstanceRef.current = map;
         setLoading(false);
       } catch (e) {
@@ -92,6 +100,7 @@ export default function MapView({ location, scene }: Props) {
         mapInstanceRef.current = null;
         overlayRef.current = null;
         permanentWaterOverlayRef.current = null;
+        confidenceOverlayRef.current = null;
       }
     };
   }, [location, scene]);
@@ -107,6 +116,12 @@ export default function MapView({ location, scene }: Props) {
     const overlay = permanentWaterOverlayRef.current as { setOpacity: (o: number) => void };
     overlay.setOpacity(permanentWaterVisible ? 0.55 : 0);
   }, [permanentWaterVisible]);
+
+  useEffect(() => {
+    if (!confidenceOverlayRef.current) return;
+    const overlay = confidenceOverlayRef.current as { setOpacity: (o: number) => void };
+    overlay.setOpacity(confidenceVisible ? 0.7 : 0);
+  }, [confidenceVisible]);
 
   const zoomToCell = useCallback((index: number) => {
     if (!mapInstanceRef.current) return;
@@ -244,6 +259,29 @@ export default function MapView({ location, scene }: Props) {
               style={{ background: "#faf8f4", border: "1px solid #e8e2d8", color: "#b0a090", boxShadow: "0 1px 4px rgba(0,0,0,0.08)" }}
             >
               JRC layer pending
+            </div>
+          )}
+
+          {scene.probability_url ? (
+            <button
+              onClick={() => setConfidenceVisible((v) => !v)}
+              className="flex items-center gap-2 text-xs font-medium px-3 py-2 rounded-lg transition-all"
+              style={{
+                background: confidenceVisible ? "#f3ecf9" : "#faf8f4",
+                border: confidenceVisible ? "1px solid #c8a8dc" : "1px solid #e8e2d8",
+                color: confidenceVisible ? "#6a2c8c" : "#9a8f7e",
+                boxShadow: "0 1px 4px rgba(0,0,0,0.08)",
+              }}
+            >
+              <div style={{ width: 7, height: 7, borderRadius: "50%", background: confidenceVisible ? "#6a2c8c" : "#d0c8be" }} />
+              {confidenceVisible ? "Confidence on" : "Confidence off"}
+            </button>
+          ) : (
+            <div
+              className="text-xs px-3 py-2 rounded-lg"
+              style={{ background: "#faf8f4", border: "1px solid #e8e2d8", color: "#b0a090", boxShadow: "0 1px 4px rgba(0,0,0,0.08)" }}
+            >
+              Confidence layer pending
             </div>
           )}
         </div>
