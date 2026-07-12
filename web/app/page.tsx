@@ -96,10 +96,10 @@ export default function Home() {
 
                   <div className="flex items-baseline justify-between">
                     <span className="text-base font-bold" style={{ color: "var(--accent)" }}>
-                      {loc.flooded_area_km2} km²
+                      {loc.flooded_area_km2 !== null ? `${loc.flooded_area_km2} km²` : "Pending"}
                     </span>
                     <span className="text-xs" style={{ color: "var(--text-muted)" }}>
-                      {loc.flooded_pct}% flooded
+                      {loc.flooded_pct !== null ? `${loc.flooded_pct}% flooded` : ""}
                     </span>
                   </div>
 
