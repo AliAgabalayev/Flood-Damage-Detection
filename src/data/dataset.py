@@ -129,7 +129,7 @@ class Sen1FloodDataset(Dataset):
     def __len__(self) -> int:
         return len(self.image_paths)
 
-    def __getitem__(self, index: int) -> Tuple[Tensor, Tensor, Tensor]:
+    def __getitem__(self, index: int) -> Tuple[Tensor, Tensor, Tensor, str]:
         # I/O
         raw_image: np.ndarray = _load_image(self.image_paths[index])
         raw_label: np.ndarray = _load_label(self.label_paths[index])
@@ -163,4 +163,4 @@ class Sen1FloodDataset(Dataset):
             source=str(self.image_paths[index]),
         )
 
-        return image_tensor.float(), label_tensor.long(), valid_mask.bool()
+        return image_tensor.float(), label_tensor.long(), valid_mask.bool(), str(self.image_paths[index])

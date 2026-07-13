@@ -9,11 +9,12 @@ import numpy as np
 import torch
 from torch import Tensor
 
-from data.preprocessing import default_preprocessor, layover_shadow_mask, mask_layover_shadow
-from inference.permanent_water import permanent_water_mask, subtract_permanent_water
+from data.preprocessing import default_preprocessor, layover_shadow_mask
+from inference.permanent_water import permanent_water_mask
+from inference.postprocess import postprocess
 from inference.stitching import MaskTile, binarize, stitch_tiles, verify_overlay, write_geotiff
 from inference.tiling import TileRecord, generate_tiles
-from inference.tta import tta_predict
+from inference.tta import predict_prob
 from training.lightning_module import FloodModel
 from utils.config import Config, load_config
 
@@ -105,7 +106,7 @@ def _run_tile_inference(
         for record in tiles:
             # Add batch dimension: (C, H, W) → (1, C, H, W)
             batch: Tensor = record.tile.unsqueeze(0).to(device)
-            prob: Tensor = tta_predict(model, batch) if tta else torch.sigmoid(model(batch))
+            prob: Tensor = predict_prob(model, batch, tta=tta)
             prob_2d: Tensor = prob.squeeze(0).squeeze(0)
             mask_tiles.append(
                 MaskTile(
@@ -160,23 +161,17 @@ def predict(
 
     binary_mask = binarize(prob_map, threshold=cfg.inference.threshold)
 
-    permanent = None
-    if cfg.inference.permanent_water is not None and not no_permanent_water:
-        pw = cfg.inference.permanent_water
-        permanent = permanent_water_mask(scene_path, pw.gsw_dir, pw.occurrence_threshold)
-        binary_mask = subtract_permanent_water(binary_mask, permanent)
+    binary_mask, permanent, invalid = postprocess(
+        binary_mask, scene_path, cfg,
+        no_permanent_water=no_permanent_water,
+        no_layover_shadow=no_layover_shadow,
+    )
+    if permanent is not None:
         logger.info(
             "Fused permanent water mask (occurrence threshold %d).",
-            pw.occurrence_threshold
+            cfg.inference.permanent_water.occurrence_threshold,
         )
-
-    invalid = None
-    if cfg.inference.layover_shadow is not None and not no_layover_shadow:
-        ls = cfg.inference.layover_shadow
-        invalid = layover_shadow_mask(
-            scene_path, ls.dem_dir, ls.orbit_pass, ls.near_incidence_deg, ls.far_incidence_deg
-        )
-        binary_mask = mask_layover_shadow(binary_mask, invalid)
+    if invalid is not None:
         logger.info("Fused layover/shadow mask (%d px flagged).", int(invalid.sum()))
 
     flood_pixels = int(binary_mask.sum())

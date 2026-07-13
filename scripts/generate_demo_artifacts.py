@@ -15,8 +15,8 @@ from PIL import Image
 _PROJECT_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(_PROJECT_ROOT / "src"))
 
-from data.preprocessing import default_preprocessor, layover_shadow_mask, mask_layover_shadow
-from inference.permanent_water import permanent_water_mask, subtract_permanent_water
+from data.preprocessing import default_preprocessor
+from inference.postprocess import postprocess
 from inference.predict import _load_model, _run_tile_inference, _select_device
 from inference.stitching import binarize, stitch_tiles, write_geotiff
 from inference.tiling import generate_tiles
@@ -104,28 +104,21 @@ def process_scene(
         tile_size=cfg.inference.tile_size,
         overlap=cfg.inference.tile_overlap,
     )
-    prob_map = stitch_tiles(_run_tile_inference(model, tiles, device), shape)
+    prob_map = stitch_tiles(_run_tile_inference(model, tiles, device, tta=cfg.inference.tta), shape)
     flood = binarize(prob_map, threshold=cfg.inference.threshold)
 
-    # Permanent-water (opt-in; off unless config sets inference.permanent_water)
     if cfg.inference.permanent_water is not None:
-        pw = cfg.inference.permanent_water
-        gsw_dir = Path(pw.gsw_dir)
-        _require(gsw_dir, "JRC GSW occurrence directory")
-        perm = permanent_water_mask(scene, gsw_dir, pw.occurrence_threshold)
-        flood = subtract_permanent_water(flood, perm)
+        _require(Path(cfg.inference.permanent_water.gsw_dir), "JRC GSW occurrence directory")
+    if cfg.inference.layover_shadow is not None:
+        _require(Path(cfg.inference.layover_shadow.dem_dir), "Copernicus DEM directory")
+
+    flood, perm, invalid = postprocess(flood, scene, cfg)
+
+    if perm is not None:
         write_geotiff(perm, scene, out_dir / "permanent_water.tif")
         _mask_to_png(perm, _WATER_RGBA, out_dir / "permanent_water.png")
 
-    # Layover/shadow (opt-in; off unless config sets inference.layover_shadow)
-    if cfg.inference.layover_shadow is not None:
-        ls = cfg.inference.layover_shadow
-        dem_dir = Path(ls.dem_dir)
-        _require(dem_dir, "Copernicus DEM directory")
-        invalid = layover_shadow_mask(
-            scene, dem_dir, ls.orbit_pass, ls.near_incidence_deg, ls.far_incidence_deg
-        )
-        flood = mask_layover_shadow(flood, invalid)
+    if invalid is not None:
         invalid_u8 = invalid.astype(np.uint8)
         write_geotiff(invalid_u8, scene, out_dir / "layover_shadow.tif")
         _mask_to_png(invalid_u8, _LAYOVER_SHADOW_RGBA, out_dir / "layover_shadow.png")
