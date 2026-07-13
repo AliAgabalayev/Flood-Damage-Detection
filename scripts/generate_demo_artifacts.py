@@ -4,6 +4,7 @@ import argparse
 import json
 import logging
 import sys
+import time
 from pathlib import Path
 from typing import Any, Dict, List, Tuple
 
@@ -190,6 +191,8 @@ def main() -> None:
     model  = _load_model(cfg, device)
     logger.info("Loaded model on %s", device)
 
+    cache_bust = int(time.time())
+
     updated = []
     for loc in locations:
         if loc not in have_scene:
@@ -210,14 +213,14 @@ def main() -> None:
             "date": date_str,
             "flooded_area_km2": area_km2,
             "flooded_pct": pct,
-            "mask_url":    f"/data/{loc_id}/{date_str}/flood_mask.png",
-            "sar_url":     f"/data/{loc_id}/{date_str}/sar.png",
-            "geotiff_url": f"/data/{loc_id}/{date_str}/flood_mask.tif",
+            "mask_url":    f"/data/{loc_id}/{date_str}/flood_mask.png?v={cache_bust}",
+            "sar_url":     f"/data/{loc_id}/{date_str}/sar.png?v={cache_bust}",
+            "geotiff_url": f"/data/{loc_id}/{date_str}/flood_mask.tif?v={cache_bust}",
         }
         if cfg.inference.permanent_water is not None:
-            new_scene["permanent_water_url"] = f"/data/{loc_id}/{date_str}/permanent_water.png"
+            new_scene["permanent_water_url"] = f"/data/{loc_id}/{date_str}/permanent_water.png?v={cache_bust}"
         if cfg.inference.layover_shadow is not None:
-            new_scene["layover_shadow_url"] = f"/data/{loc_id}/{date_str}/layover_shadow.png"
+            new_scene["layover_shadow_url"] = f"/data/{loc_id}/{date_str}/layover_shadow.png?v={cache_bust}"
 
         loc["center"] = center
         loc["bounds"] = bounds
