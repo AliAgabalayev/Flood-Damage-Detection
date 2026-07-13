@@ -15,10 +15,10 @@ export default async function LocationPage({ params }: { params: Promise<{ id: s
 
   if (!location || !location.scenes || location.scenes.length === 0) {
     return (
-      <div className="flex h-screen items-center justify-center" style={{ background: "#f0ece4" }}>
+      <div className="flex h-screen items-center justify-center" style={{ background: "var(--bg)" }}>
         <div className="text-center">
-          <div className="text-sm font-medium mb-2" style={{ color: "#c8622a" }}>Location not found</div>
-          <Link href="/" className="text-xs underline" style={{ color: "#9a8f7e" }}>Back to locations</Link>
+          <div className="text-sm font-medium mb-2" style={{ color: "var(--danger)" }}>Location not found</div>
+          <Link href="/" className="text-xs underline" style={{ color: "var(--text-500)" }}>Back to locations</Link>
         </div>
       </div>
     );

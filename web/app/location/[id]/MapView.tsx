@@ -147,19 +147,19 @@ export default function MapView({ location, scene }: Props) {
         <div
           style={{
             position: "absolute", inset: 0, zIndex: 1000,
-            background: "#e8e0d4",
+            background: "var(--navy-900)",
             display: "flex", alignItems: "center", justifyContent: "center",
           }}
         >
           <div className="text-center">
-            <div
-              style={{
-                width: 32, height: 32, border: "2px solid #e8e2d8",
-                borderTop: "2px solid #c8622a", borderRadius: "50%",
-                animation: "spin 0.8s linear infinite", margin: "0 auto 10px",
-              }}
-            />
-            <div className="text-xs" style={{ color: "#9a8f7e" }}>Loading map…</div>
+            <div className="radar-mark" style={{ width: 44, height: 44, borderRadius: 12, margin: "0 auto 12px" }}>
+              <div className="radar-mark__sweep" />
+              <div className="radar-mark__ring" />
+              <div className="radar-mark__dot" />
+            </div>
+            <div className="text-xs" style={{ fontFamily: "var(--font-mono)", color: "var(--text-on-navy-soft)" }}>
+              Loading map…
+            </div>
           </div>
         </div>
       )}
@@ -168,9 +168,9 @@ export default function MapView({ location, scene }: Props) {
         <div
           style={{
             position: "absolute", top: 12, left: "50%", transform: "translateX(-50%)",
-            zIndex: 1000, background: "#fdf0ec", border: "1px solid #e8c0a0",
-            borderRadius: 8, padding: "8px 14px", fontSize: 11, color: "#c8622a",
-            whiteSpace: "nowrap", boxShadow: "0 1px 4px rgba(0,0,0,0.08)",
+            zIndex: 1000, background: "var(--danger-soft)", border: "1px solid #f0c4c4",
+            borderRadius: 8, padding: "8px 14px", fontSize: 11, color: "var(--danger)",
+            whiteSpace: "nowrap", boxShadow: "0 1px 4px rgba(13,31,51,0.08)",
           }}
         >
           {error}
@@ -194,12 +194,12 @@ export default function MapView({ location, scene }: Props) {
               key={i}
               onClick={() => zoomToCell(i)}
               style={{
-                border: "1px dashed rgba(44,36,22,0.15)",
+                border: "1px dashed rgba(28,111,214,0.18)",
                 cursor: "pointer",
                 pointerEvents: "auto",
                 transition: "background 0.15s",
               }}
-              onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(200,98,42,0.08)")}
+              onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(28,111,214,0.08)")}
               onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
             />
           ))}
@@ -212,10 +212,10 @@ export default function MapView({ location, scene }: Props) {
             onClick={resetZoom}
             className="flex items-center gap-2 text-xs font-medium px-3 py-2 rounded-lg transition-all"
             style={{
-              background: "#faf8f4",
-              border: "1px solid #e8e2d8",
-              color: "#3c3020",
-              boxShadow: "0 1px 4px rgba(0,0,0,0.08)",
+              background: "var(--panel)",
+              border: "1px solid var(--line)",
+              color: "var(--text-900)",
+              boxShadow: "0 1px 4px rgba(13,31,51,0.08)",
             }}
           >
             Full view
@@ -229,13 +229,13 @@ export default function MapView({ location, scene }: Props) {
             onClick={() => setMaskVisible((v) => !v)}
             className="flex items-center gap-2 text-xs font-medium px-3 py-2 rounded-lg transition-all"
             style={{
-              background: maskVisible ? "#fdf5ec" : "#faf8f4",
-              border: maskVisible ? "1px solid #e8c0a0" : "1px solid #e8e2d8",
-              color: maskVisible ? "#c8622a" : "#9a8f7e",
-              boxShadow: "0 1px 4px rgba(0,0,0,0.08)",
+              background: maskVisible ? "var(--signal-soft)" : "var(--panel)",
+              border: maskVisible ? "1px solid var(--signal-line)" : "1px solid var(--line)",
+              color: maskVisible ? "var(--signal-strong)" : "var(--text-500)",
+              boxShadow: "0 1px 4px rgba(13,31,51,0.08)",
             }}
           >
-            <div style={{ width: 7, height: 7, borderRadius: "50%", background: maskVisible ? "#c8622a" : "#d0c8be" }} />
+            <div style={{ width: 7, height: 7, borderRadius: "50%", background: maskVisible ? "var(--layer-water)" : "#c9d3dd" }} />
             {maskVisible ? "Flood mask on" : "Flood mask off"}
           </button>
 
@@ -244,19 +244,19 @@ export default function MapView({ location, scene }: Props) {
               onClick={() => setPermanentWaterVisible((v) => !v)}
               className="flex items-center gap-2 text-xs font-medium px-3 py-2 rounded-lg transition-all"
               style={{
-                background: permanentWaterVisible ? "#eaf1f7" : "#faf8f4",
-                border: permanentWaterVisible ? "1px solid #a8c8dc" : "1px solid #e8e2d8",
-                color: permanentWaterVisible ? "#2c6a8c" : "#9a8f7e",
-                boxShadow: "0 1px 4px rgba(0,0,0,0.08)",
+                background: permanentWaterVisible ? "#e4f6f4" : "var(--panel)",
+                border: permanentWaterVisible ? "1px solid #a6ded7" : "1px solid var(--line)",
+                color: permanentWaterVisible ? "var(--layer-permanent)" : "var(--text-500)",
+                boxShadow: "0 1px 4px rgba(13,31,51,0.08)",
               }}
             >
-              <div style={{ width: 7, height: 7, borderRadius: "50%", background: permanentWaterVisible ? "#2c6a8c" : "#d0c8be" }} />
+              <div style={{ width: 7, height: 7, borderRadius: "50%", background: permanentWaterVisible ? "var(--layer-permanent)" : "#c9d3dd" }} />
               {permanentWaterVisible ? "Permanent water on" : "Permanent water off"}
             </button>
           ) : (
             <div
               className="text-xs px-3 py-2 rounded-lg"
-              style={{ background: "#faf8f4", border: "1px solid #e8e2d8", color: "#b0a090", boxShadow: "0 1px 4px rgba(0,0,0,0.08)" }}
+              style={{ background: "var(--panel)", border: "1px solid var(--line)", color: "var(--text-300)", boxShadow: "0 1px 4px rgba(13,31,51,0.08)" }}
             >
               JRC layer pending
             </div>
@@ -267,19 +267,19 @@ export default function MapView({ location, scene }: Props) {
               onClick={() => setConfidenceVisible((v) => !v)}
               className="flex items-center gap-2 text-xs font-medium px-3 py-2 rounded-lg transition-all"
               style={{
-                background: confidenceVisible ? "#f3ecf9" : "#faf8f4",
-                border: confidenceVisible ? "1px solid #c8a8dc" : "1px solid #e8e2d8",
-                color: confidenceVisible ? "#6a2c8c" : "#9a8f7e",
-                boxShadow: "0 1px 4px rgba(0,0,0,0.08)",
+                background: confidenceVisible ? "#efecfe" : "var(--panel)",
+                border: confidenceVisible ? "1px solid #c9bdf6" : "1px solid var(--line)",
+                color: confidenceVisible ? "var(--layer-confidence)" : "var(--text-500)",
+                boxShadow: "0 1px 4px rgba(13,31,51,0.08)",
               }}
             >
-              <div style={{ width: 7, height: 7, borderRadius: "50%", background: confidenceVisible ? "#6a2c8c" : "#d0c8be" }} />
+              <div style={{ width: 7, height: 7, borderRadius: "50%", background: confidenceVisible ? "var(--layer-confidence)" : "#c9d3dd" }} />
               {confidenceVisible ? "Confidence on" : "Confidence off"}
             </button>
           ) : (
             <div
               className="text-xs px-3 py-2 rounded-lg"
-              style={{ background: "#faf8f4", border: "1px solid #e8e2d8", color: "#b0a090", boxShadow: "0 1px 4px rgba(0,0,0,0.08)" }}
+              style={{ background: "var(--panel)", border: "1px solid var(--line)", color: "var(--text-300)", boxShadow: "0 1px 4px rgba(13,31,51,0.08)" }}
             >
               Confidence layer pending
             </div>
@@ -291,16 +291,14 @@ export default function MapView({ location, scene }: Props) {
         <div
           style={{
             position: "absolute", bottom: 32, left: "50%", transform: "translateX(-50%)",
-            zIndex: 1000, background: "#faf8f4", border: "1px solid #e8e2d8",
-            borderRadius: 8, padding: "8px 14px", fontSize: 11, color: "#9a8f7e",
-            whiteSpace: "nowrap", boxShadow: "0 1px 4px rgba(0,0,0,0.08)",
+            zIndex: 1000, background: "var(--panel)", border: "1px solid var(--line)",
+            borderRadius: 8, padding: "8px 14px", fontSize: 11, color: "var(--text-500)",
+            whiteSpace: "nowrap", boxShadow: "0 1px 4px rgba(13,31,51,0.08)",
           }}
         >
           No mask yet — waiting for model output
         </div>
       )}
-
-      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </div>
   );
 }
