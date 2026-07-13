@@ -7,13 +7,53 @@ function loadImage(src: string): Promise<HTMLImageElement> {
   });
 }
 
-// Renders the flood mask with any pixel that's also permanent water made
+// Model detections right at a riverbank often land just outside JRC's exact
+// permanent-water footprint (resolution/threshold mismatch, mixed edge
+// pixels) -- an exact-pixel suppression leaves a thin flood-colored fringe
+// hugging the water, which reads as noise. Dilating the suppression mask by
+// a small margin absorbs that fringe. Separable (horizontal pass then
+// vertical) so cost is O(w*h*radius), not O(w*h*radius^2).
+function dilateAlpha(alpha: Uint8ClampedArray, width: number, height: number, radius: number): Uint8Array {
+  const rowMax = new Uint8Array(width * height);
+  for (let y = 0; y < height; y++) {
+    const base = y * width;
+    for (let x = 0; x < width; x++) {
+      let m = 0;
+      const lo = Math.max(0, x - radius);
+      const hi = Math.min(width - 1, x + radius);
+      for (let xx = lo; xx <= hi; xx++) {
+        const a = alpha[(base + xx) * 4 + 3];
+        if (a > m) m = a;
+      }
+      rowMax[base + x] = m;
+    }
+  }
+
+  const out = new Uint8Array(width * height);
+  for (let x = 0; x < width; x++) {
+    for (let y = 0; y < height; y++) {
+      let m = 0;
+      const lo = Math.max(0, y - radius);
+      const hi = Math.min(height - 1, y + radius);
+      for (let yy = lo; yy <= hi; yy++) {
+        const v = rowMax[yy * width + x];
+        if (v > m) m = v;
+      }
+      out[y * width + x] = m;
+    }
+  }
+  return out;
+}
+
+// Renders the flood mask with any pixel at or near permanent water made
 // transparent, purely for display -- the underlying mask/model data is
-// untouched. Keeps "permanent water" and "flood mask" visually mutually
-// exclusive even if the two PNGs were produced independently.
+// untouched. Keeps "permanent water" and "flood mask" visually distinct even
+// where the two independently-produced PNGs disagree by a pixel or two at
+// the water's edge.
 export async function suppressPermanentWater(
   floodUrl: string,
   permanentWaterUrl: string,
+  dilationRadius: number = 5,
 ): Promise<string> {
   const [floodImg, pwImg] = await Promise.all([loadImage(floodUrl), loadImage(permanentWaterUrl)]);
 
@@ -36,10 +76,12 @@ export async function suppressPermanentWater(
     return floodUrl;
   }
 
+  const suppressMask = dilateAlpha(pwAlpha, canvas.width, canvas.height, dilationRadius);
+
   const floodData = ctx.getImageData(0, 0, canvas.width, canvas.height);
   const pixels = floodData.data;
-  for (let i = 3; i < pixels.length; i += 4) {
-    if (pwAlpha[i] > 0) pixels[i] = 0;
+  for (let i = 0, p = 3; p < pixels.length; i++, p += 4) {
+    if (suppressMask[i] > 0) pixels[p] = 0;
   }
   ctx.putImageData(floodData, 0, 0);
 
