@@ -14,3 +14,11 @@ def tta_predict(model: nn.Module, batch: Tensor) -> Tensor:
         prob = torch.sigmoid(logits)
         probs.append(torch.flip(prob, dims) if dims else prob)
     return torch.stack(probs).mean(dim=0)
+
+
+def predict_prob(model: nn.Module, x: Tensor, tta: bool = False, logits: Tensor | None = None) -> Tensor:
+    if tta:
+        return tta_predict(model, x)
+    if logits is None:
+        logits = model(x)
+    return torch.sigmoid(logits)

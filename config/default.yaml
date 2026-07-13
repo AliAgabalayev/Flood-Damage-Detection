@@ -13,8 +13,8 @@ data:
   augment: true
 
 model:
-  arch: deeplabv3plus
-  backbone: resnet50
+  arch: segformer_b4
+  backbone: nvidia/mit-b4
   pretrained: true
   in_channels: 3
   out_classes: 1
@@ -24,20 +24,20 @@ training:
   accumulate_grad_batches: 4
   precision: 16-mixed
   epochs: 50
-  lr: 0.0003
+  lr: 0.0001
   optimizer: adam
   loss: dice
   pos_weight: null
   device: cuda
-  checkpoint_dir: models
+  checkpoint_dir: models/segformer_b4/finetune
 
 mlflow:
   tracking_uri: sqlite:///mlflow.db
   artifact_location: mlruns
-  experiment: flood-water-seg
+  experiment: flood-water-seg/segformer_b4_weak_pretrain_finetune
 
 inference:
-  checkpoint: models/best.ckpt
+  checkpoint: models/segformer_b4/finetune/best.ckpt
   threshold: 0.5
   tile_size: 512
   tile_overlap: 64
