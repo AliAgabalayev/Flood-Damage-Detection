@@ -1,21 +1,107 @@
 @import "tailwindcss";
 
 :root {
-  --bg: #f0ece4;
-  --surface: #faf8f4;
-  --border: #e8e2d8;
-  --sidebar: #2c2416;
-  --accent: #c8622a;
-  --gold: #e8c89a;
-  --text-primary: #1c1710;
-  --text-secondary: #9a8f7e;
-  --text-muted: #b0a090;
-  --sand: #ddd4c4;
-  --green: #7ab060;
+  /* surfaces */
+  --bg: #eef4fb;
+  --panel: #ffffff;
+  --panel-sunken: #e4edf7;
+  --line: #dbe6f0;
+  --line-soft: #e8eff7;
+
+  /* deep navy — left rail / instrument-panel surfaces */
+  --navy-900: #071527;
+  --navy-800: #0c1f37;
+  --navy-700: #13294a;
+  --navy-600: #1c3a63;
+
+  /* signal blue — primary accent */
+  --signal: #1c6fd6;
+  --signal-strong: #0f57b3;
+  --signal-soft: #e7f0fc;
+  --signal-line: #bcd6f4;
+  --glow: #4fc3f7;
+
+  /* layer accents (kept distinct from signal blue + severity ramp) */
+  --layer-water: #1c6fd6;
+  --layer-permanent: #0e9488;
+  --layer-confidence: #7c5cff;
+
+  /* text on light surfaces */
+  --text-900: #0d1f33;
+  --text-500: #55697d;
+  --text-300: #8ea0b3;
+
+  /* text on navy surfaces */
+  --text-on-navy: #eaf2fb;
+  --text-on-navy-soft: #90a8c4;
+  --text-on-navy-dim: #5d7590;
+
+  /* status */
+  --ok: #17a673;
+  --danger: #c23b3b;
+  --danger-soft: #fdecec;
 }
 
 body {
-  background-color: #f0ece4;
-  color: #1c1710;
+  background: var(--bg);
+  color: var(--text-900);
   -webkit-font-smoothing: antialiased;
+}
+
+@keyframes sweep {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.35; }
+}
+
+.radar-mark {
+  position: relative;
+  overflow: hidden;
+  background: var(--navy-900);
+  flex-shrink: 0;
+}
+
+.radar-mark__sweep {
+  position: absolute;
+  inset: 0;
+  background: conic-gradient(from 0deg, rgba(79, 195, 247, 0) 0deg, rgba(79, 195, 247, 0.65) 28deg, rgba(79, 195, 247, 0) 68deg);
+  animation: sweep 3.2s linear infinite;
+}
+
+.radar-mark__ring {
+  position: absolute;
+  inset: 22%;
+  border: 1px solid rgba(234, 242, 251, 0.32);
+  border-radius: 50%;
+}
+
+.radar-mark__dot {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 4px;
+  height: 4px;
+  margin: -2px;
+  border-radius: 50%;
+  background: var(--glow);
+  box-shadow: 0 0 6px 1px rgba(79, 195, 247, 0.85);
+}
+
+.status-dot {
+  animation: pulse-dot 2.4s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .radar-mark__sweep {
+    animation: none;
+    opacity: 0.4;
+  }
+  .status-dot {
+    animation: none;
+  }
 }
