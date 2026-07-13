@@ -2,7 +2,6 @@
 
 import { useEffect, useRef, useState, useCallback } from "react";
 import { Location, SceneArchive } from "@/types/location";
-import { suppressPermanentWater } from "@/lib/maskComposite";
 
 interface Props {
   location: Location;
@@ -67,15 +66,7 @@ export default function MapView({ location, scene }: Props) {
         const bounds: [[number, number], [number, number]] = location.bounds;
 
         if (scene.mask_url) {
-          let floodSrc = scene.mask_url;
-          if (scene.permanent_water_url) {
-            try {
-              floodSrc = await suppressPermanentWater(scene.mask_url, scene.permanent_water_url);
-            } catch (e) {
-              console.error("Failed to composite flood mask against permanent water; showing raw mask.", e);
-            }
-          }
-          const overlay = L.imageOverlay(floodSrc, bounds, { opacity: 0.6 });
+          const overlay = L.imageOverlay(scene.mask_url, bounds, { opacity: 0.6 });
           overlay.addTo(map as never);
           overlayRef.current = overlay;
         }

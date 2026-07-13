@@ -26,8 +26,10 @@ logger = logging.getLogger(__name__)
 
 # Flood-mask overlay colour: brand orange #c8622a at 60 % opacity.
 _FLOOD_RGBA: Tuple[int, int, int, int] = (200, 98, 42, 153)
-# Permanent-water overlay colour: blue at 60 % opacity.
-_WATER_RGBA: Tuple[int, int, int, int] = (30, 100, 200, 153)
+# Permanent-water overlay colour: teal at 60 % opacity, matching the
+# frontend's --layer-permanent (#0e9488) -- kept clearly distinct from the
+# OSM basemap's own river blue so the two aren't mistaken for each other.
+_WATER_RGBA: Tuple[int, int, int, int] = (14, 148, 136, 153)
 # Layover/shadow overlay colour: grey at 60 % opacity.
 _LAYOVER_SHADOW_RGBA: Tuple[int, int, int, int] = (120, 120, 120, 153)
 
