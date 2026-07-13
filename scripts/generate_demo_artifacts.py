@@ -94,7 +94,7 @@ def process_scene(
     model: Any,
     device: str,
     cfg: Config,
-) -> Tuple[float, float]:
+) -> Tuple[float, float, List[List[float]], List[float]]:
     out_dir.mkdir(parents=True, exist_ok=True)
 
     # Inference

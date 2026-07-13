@@ -122,8 +122,8 @@ def main() -> None:
         
         # Process the scene using existing pipeline
         logger.info("Generating artifacts...")
-        area_km2, pct = process_scene(raw_sar_path, scene_out_dir, model, device, cfg)
-        
+        area_km2, pct, bounds, center = process_scene(raw_sar_path, scene_out_dir, model, device, cfg)
+
         new_scene = {
             "scene_id": scene_id,
             "timestamp": timestamp,
@@ -135,10 +135,12 @@ def main() -> None:
             "geotiff_url": f"/data/{loc_id}/{date_str}/flood_mask.tif",
             "permanent_water_url": f"/data/{loc_id}/{date_str}/permanent_water.png",
         }
-        
+
         scenes.append(new_scene)
         scenes.sort(key=lambda s: s.get("timestamp", 0), reverse=True)
         loc["scenes"] = scenes
+        loc["bounds"] = bounds
+        loc["center"] = center
         changed = True
 
     if changed:
