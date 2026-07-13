@@ -57,8 +57,9 @@ export default function MapView({ location, scene }: Props) {
 
         map = L.map(mapRef.current, {
           zoomControl: true,
+          zoomSnap: 0.1,
         });
-        map.fitBounds(location.bounds);
+        map.fitBounds(location.bounds, { padding: [0, 0] });
 
         L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
           attribution: "© OpenStreetMap contributors",
@@ -142,14 +143,14 @@ export default function MapView({ location, scene }: Props) {
     if (!mapInstanceRef.current) return;
     const map = mapInstanceRef.current as { fitBounds: (b: unknown, opts: unknown) => void };
     const cellBounds = subBoundsGrid[index];
-    map.fitBounds(cellBounds, { animate: true });
+    map.fitBounds(cellBounds, { animate: true, padding: [0, 0] });
     setZoomedCell(index);
   }, [subBoundsGrid]);
 
   const resetZoom = useCallback(() => {
     if (!mapInstanceRef.current) return;
     const map = mapInstanceRef.current as { fitBounds: (b: unknown, opts: unknown) => void };
-    map.fitBounds(originalBounds, { animate: true });
+    map.fitBounds(originalBounds, { animate: true, padding: [0, 0] });
     setZoomedCell(null);
   }, [originalBounds]);
 
