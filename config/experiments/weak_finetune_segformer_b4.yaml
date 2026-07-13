@@ -42,3 +42,11 @@ inference:
   threshold: 0.5
   tile_size: 512
   tile_overlap: 64
+  permanent_water:
+    gsw_dir: data/reference/jrc_gsw/occurrence
+    occurrence_threshold: 50
+  layover_shadow:
+    dem_dir: data/reference/dem
+    orbit_pass: ASCENDING
+    near_incidence_deg: 29.1
+    far_incidence_deg: 46.0
