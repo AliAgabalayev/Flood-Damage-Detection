@@ -12,7 +12,7 @@ interface Props {
   location: Location;
 }
 
-const ALL_LOCATIONS = allLocationsData as Location[];
+const ALL_LOCATIONS = allLocationsData as unknown as Location[];
 
 export default function LocationView({ location }: Props) {
   const sortedScenes = useMemo(
@@ -197,15 +197,6 @@ export default function LocationView({ location }: Props) {
           )}
         </div>
 
-        {/* Pipeline */}
-        <div className="pt-5" style={{ borderTop: "1px solid var(--line)" }}>
-          <SectionLabel>Pipeline</SectionLabel>
-          <div className="flex flex-col gap-1.5 text-[11px]" style={{ fontFamily: "var(--font-mono)", color: "var(--text-500)" }}>
-            <div>Model · {location.model}</div>
-            <div>Sensor · Sentinel-1 SAR (VV/VH)</div>
-            <div>Tiling · 512×512 patches</div>
-          </div>
-        </div>
       </aside>
     </div>
   );

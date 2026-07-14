@@ -1,6 +1,5 @@
 export interface SceneArchive {
   scene_id: string;
-  timestamp: number;
   date: string;
   flooded_area_km2: number | null;
   flooded_pct: number | null;
@@ -9,6 +8,7 @@ export interface SceneArchive {
   geotiff_url: string | null;
   permanent_water_url: string | null;
   probability_url: string | null;
+  layover_shadow_url: string | null;
 }
 
 export interface Location {
