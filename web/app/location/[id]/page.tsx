@@ -3,7 +3,7 @@ import { Location } from "@/types/location";
 import locationsData from "@/public/data/locations.json";
 import LocationView from "./LocationView";
 
-const locations = locationsData as Location[];
+const locations = locationsData as unknown as Location[];
 
 export function generateStaticParams() {
   return locations.map((loc) => ({ id: loc.id }));

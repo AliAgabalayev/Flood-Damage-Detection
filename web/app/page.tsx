@@ -6,7 +6,7 @@ import { Location } from "@/types/location";
 import locationsData from "@/public/data/locations.json";
 import { severityColor, severityLabel } from "@/lib/severity";
 
-const locations = locationsData as Location[];
+const locations = locationsData as unknown as Location[];
 
 function latestSceneOf(loc: Location) {
   return [...loc.scenes].sort((a, b) => (a.date < b.date ? 1 : -1))[0];
@@ -179,20 +179,6 @@ export default function Home() {
           })}
         </div>
 
-        <div className="pt-5" style={{ borderTop: "1px solid var(--line)" }}>
-          <p
-            className="text-[10px] font-medium tracking-widest mb-2.5"
-            style={{ fontFamily: "var(--font-mono)", color: "var(--text-300)" }}
-          >
-            PIPELINE
-          </p>
-          <div className="flex flex-col gap-1.5 text-[11px]" style={{ fontFamily: "var(--font-mono)", color: "var(--text-500)" }}>
-            <div>Sensor · Sentinel-1 SAR (VV/VH)</div>
-            <div>Model · DeepLabV3+ / SegFormer-B4</div>
-            <div>Dataset · Sen1Floods11</div>
-            <div>Tiling · 512×512 patches</div>
-          </div>
-        </div>
       </aside>
     </div>
   );
