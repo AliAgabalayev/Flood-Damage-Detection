@@ -1,5 +1,7 @@
 # Flood Damage Detection
 
+<img src="docs/assets/logo.png" alt="FlooScan logo" width="220">
+
 ## Team: Gale
 
 ## SAR-Based Flood Damage Detection Using Deep Learning
