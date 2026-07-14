@@ -1,4 +1,4 @@
-# Flood Damage Detection
+# FlooScan — Flood Damage Detection
 
 <img src="docs/assets/logo.png" alt="FlooScan logo" width="220">
 
