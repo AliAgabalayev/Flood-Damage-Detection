@@ -1,6 +1,6 @@
 # FlooScan
 
-<img src="docs/assets/logo.png" alt="FlooScan logo" width="220">
+<img src="docs/assets/logo.png" alt="FlooScan logo" width="700">
 
 ## Team: Gale
 
