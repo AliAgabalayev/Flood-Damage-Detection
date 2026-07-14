@@ -4,7 +4,7 @@ MLFLOW_URI ?= sqlite:///mlflow.db
 
 .DEFAULT_GOAL := help
 
-.PHONY: help install config train eval predict demo-artifacts finalists download-weak-data weak-splits pretrain-finetune vast-bootstrap mlflow-ui dvc-push dvc-pull lint
+.PHONY: help install config train eval predict demo-artifacts finalists download-weak-data weak-splits pretrain-finetune vast-bootstrap mlflow-ui dvc-push dvc-pull jury-bundle fetch-jury-data lint
 
 FINALISTS_MATRIX := config/experiments/loss_finalists.yaml
 FINALISTS_CKPT := models/loss_finalists
@@ -24,6 +24,8 @@ help:
 	@echo "mlflow-ui  launch MLflow UI on the sqlite backend"
 	@echo "dvc-push   push tracked data/models to DVC remote"
 	@echo "dvc-pull   pull tracked data/models from DVC remote"
+	@echo "jury-bundle     (dev) package the grading subset into jury_bundle.tar.gz"
+	@echo "fetch-jury-data (grader) download the grading subset, no DVC/OAuth needed"
 	@echo "lint       byte-compile all source"
 
 install:
@@ -75,6 +77,12 @@ dvc-push:
 
 dvc-pull:
 	.venv/bin/dvc pull
+
+jury-bundle:
+	bash scripts/package_jury_bundle.sh
+
+fetch-jury-data:
+	bash scripts/fetch_jury_bundle.sh
 
 lint:
 	$(PY) -m compileall -q src

@@ -1,4 +1,6 @@
-# Flood Damage Detection
+# FlooScan
+
+<img src="docs/assets/logo.png" alt="FlooScan logo" width="220">
 
 ## Team: Gale
 
@@ -66,24 +68,34 @@ DVC stores the large artifacts in a shared Google Drive remote, not in git:
   `models/weak_pretrain_finetune/` — checkpoints
 - `mlflow.db` — experiment-tracking database
 
-Setup on a new machine (one-time):
-1. Ask the repo owner for: (a) access to the shared Drive folder, and (b) the
-   team's DVC OAuth client ID + secret (not committed to git — DVC's own
-   default shared client gets rate-limited/blocked by Google, so this repo
-   uses a dedicated one instead).
-2. Configure the client locally (writes to the gitignored `.dvc/config.local`,
-   never committed):
-   ```bash
-   dvc remote modify --local gdrive gdrive_client_id <client_id>
-   dvc remote modify --local gdrive gdrive_client_secret <client_secret>
-   ```
-3. Run `make dvc-pull` — a browser opens for a one-time Google OAuth consent;
-   the token is then cached (`~/.cache/pydrive2fs/`) and later calls are
-   non-interactive.
+### Team members — DVC setup
+
+Private remote, dedicated OAuth client (DVC's default shared client gets
+rate-limited by Google). Ask the repo owner for Drive access + the client
+ID/secret, then:
 
 ```bash
 make dvc-pull   # fetch tracked data/checkpoints
 make dvc-push   # publish tracked data/checkpoints
+```
+
+### For graders — full setup, no DVC/OAuth needed
+
+The full DVC store above is private (team-only Drive + OAuth client) because most
+of it is dev-only: the 6.8 GiB weak-labeled corpus, every sweep/ablation/LOCO
+checkpoint, etc. Grading doesn't need any of that, so a separate **public**
+Google Drive artifact carries just the slice needed to run the real pipeline
+end-to-end: the production checkpoint (`models/segformer_b4/finetune/best.ckpt`),
+the DEM + JRC permanent-water reference data (shipped as the same full,
+country-spanning sets `make eval` uses, not trimmed down to just the demo
+scenes), the five demo scenes, and the hand-labeled Sen1Floods11 split. Needs
+~14 GiB free disk (6 GiB compressed download + 6 GiB extracted, briefly
+coexisting).
+
+```bash
+make fetch-jury-data   # one command, no Google login, ~6 GiB download
+make predict INPUT=data/demo_scenes/baku.tif OUTPUT=/tmp/baku_mask.tif
+make eval
 ```
 
 ## Project structure

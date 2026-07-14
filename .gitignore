@@ -43,3 +43,6 @@ mlruns/
 .DS_Store
 .idea/
 .vscode/
+
+# Jury grading bundle (built by make jury-bundle, hosted on public Drive)
+jury_bundle.tar.gz
