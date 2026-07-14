@@ -6,8 +6,11 @@
 
 End-to-end **binary flood-water semantic segmentation** from **Sentinel-1 SAR**
 (Sen1Floods11), built with **PyTorch Lightning + segmentation-models-pytorch**.
-Input is 3-channel SAR (VV, VH, VV−VH ratio); architectures (DeepLabV3+,
-SegFormer-B2) are compared on the same data contract and scorer.
+Input is 3-channel SAR (VV, VH, VV−VH ratio) at 512×512. The production model is
+**SegFormer-B4** (`nvidia/mit-b4`); DeepLabV3+, DeepLabV3, U-Net, U-Net++, FPN and
+SegFormer-B2 are all available through the same architecture registry, data
+contract and scorer. Predictions are refined with JRC permanent-water and
+DEM-derived layover/shadow post-processing, and browsable in a Next.js map viewer.
 
 ## Project Team
 
@@ -21,30 +24,47 @@ SegFormer-B2) are compared on the same data contract and scorer.
 ## Decisions (locked)
 S1-only 3-channel · binary · 512×512 · Lightning+smp · MLflow · DVC ·
 yaml+pydantic config · local GPU (RTX 3060 6GB → bs=2, accum=4, 16-mixed).
-Locked hyperparameters / paths live in [config/default.yaml](config/default.yaml).
+Production model is **SegFormer-B4**, trained two-stage (weak-label pretrain →
+hand-label fine-tune). Inference fuses JRC permanent-water and DEM-derived
+layover/shadow masks into the flood mask. Locked hyperparameters / paths live in
+[config/default.yaml](config/default.yaml).
 
 ```bash
 python -m venv .venv && source .venv/bin/activate
-pip install -r requirements.txt
+pip install -r requirements.txt   # or: make install
 ```
 
 ## Target CLI
 ```bash
+make help                        # list all targets
+make install                     # install pinned deps into .venv
 make config                      # validate config/default.yaml
-make train                       # train the production baseline
+make train                       # train the production baseline (SegFormer-B4)
 make eval                        # evaluate a checkpoint on a split
-make predict INPUT=.. OUTPUT=.. [PROB=..]  # tiled predict -> georeferenced GeoTIFF
-make finalists ONLY=<run_name>   # architecture/loss sweep runs
+make predict INPUT=.. OUTPUT=.. [PROB=..] [PERMANENT_WATER=..] [LAYOVER_SHADOW=..] \
+             [NO_PERMANENT_WATER=1] [NO_LAYOVER_SHADOW=1]   # tiled predict -> georeferenced GeoTIFF
+make finalists [ONLY=<run_name>] # architecture/loss sweep runs
+make download-weak-data          # Sen1Floods11 weak-labeled chips (~6.8 GiB)
+make weak-splits                 # build train/val split CSVs for the weak chips
 make pretrain-finetune           # weak-label pretrain + hand-label fine-tune
+make demo-artifacts              # regenerate web/public/data mask/SAR PNGs + GeoTIFFs
+make vast-bootstrap              # set up a fresh Vast.ai GPU box (no training launched)
 make mlflow-ui                   # MLflow UI (sqlite:///mlflow.db)
 make dvc-push / make dvc-pull    # data & model versioning
+make lint                        # byte-compile all source
 ```
 
 ## Data & model versioning
 
-DVC-tracked data (`data/processed/`, `data/reference/`) and checkpoints
-(`models/best.ckpt`, `models/last.ckpt`, `models/weak_pretrain_finetune/`) are
-stored in a shared Google Drive remote, not locally.
+DVC stores the large artifacts in a shared Google Drive remote, not in git:
+
+- `data/processed/sen1floods11/` — hand- and weak-labeled SAR chips
+- `data/reference/dem/` — Copernicus GLO-30 DEM (SRTM1 / GLO-90 fallback per tile)
+- `data/reference/jrc_gsw/` — JRC Global Surface Water occurrence (permanent water)
+- `data/demo_scenes/*.tif` — wide-AOI Sentinel-1 scenes for the web viewer
+- `models/segformer_b4/`, `models/best.ckpt`, `models/last.ckpt`,
+  `models/weak_pretrain_finetune/` — checkpoints
+- `mlflow.db` — experiment-tracking database
 
 Setup on a new machine (one-time):
 1. Ask the repo owner for: (a) access to the shared Drive folder, and (b) the
@@ -71,43 +91,80 @@ make dvc-push   # publish tracked data/checkpoints
 ```
 Flood-Damage-Detection/
 ├── config/
-│   ├── default.yaml        # production config
-│   └── experiments/        # per-study configs (loss study, weak pretrain/fine-tune, ...)
+│   ├── default.yaml        # production config (SegFormer-B4)
+│   └── experiments/        # loss study, weak pretrain/fine-tune, SegFormer/B4 & USA variants
 ├── data/
 │   ├── raw/
 │   ├── processed/          # Sen1Floods11 hand- and weak-labeled chips (DVC-tracked)
+│   ├── reference/          # DEM (GLO-30) + JRC GSW permanent water (DVC-tracked)
+│   ├── demo_scenes/        # wide-AOI Sentinel-1 scenes for the viewer (DVC-tracked)
 │   └── splits/             # official + weak train/val/test CSVs
-├── docs/                   # study reports (e.g. loss_study.md)
-├── models/                 # checkpoints (best.ckpt, last.ckpt, weak_pretrain_finetune/ DVC-tracked; rest git-ignored)
+├── docs/                   # study reports (loss_study, usa_country_ablation, fixed_locations)
+├── models/                 # checkpoints (segformer_b4/, best/last, weak_pretrain_finetune/ DVC-tracked)
 ├── notebooks/              # EDA + Colab sweep notebooks
-├── scripts/                # data download, split generation, sweep/pretrain-finetune runners
+├── scripts/                # data download/harvest, split generation, sweep/pretrain-finetune runners, demo artifacts
 ├── src/
-│   ├── data/                # dataset, datamodule, preprocessing, transforms
-│   ├── models/               # architecture builders
-│   ├── training/              # training loop, losses, MLflow logging
-│   ├── inference/              # tiling, evaluation, prediction
-│   └── utils/                  # config, MLflow helpers
-├── web/                    # Next.js frontend (map viewer)
+│   ├── data/               # dataset, datamodule, preprocessing, transforms, split loader
+│   ├── models/             # architecture registry + SegFormer wrapper (build.py)
+│   ├── training/           # Lightning module, losses, train loop, MLflow logging
+│   ├── inference/          # tiling, stitching, TTA, postprocess, permanent-water, predict, evaluate
+│   └── utils/              # config (pydantic), MLflow helpers
+├── web/                    # Next.js map viewer (flood-mask browser)
 └── Makefile
 ```
 
 ## Workflow
 
 1. **Prepare data** — `bash scripts/download_data.sh` (hand-labeled) and
-   `make download-weak-data` (weak-labeled, for pretraining).
-2. **Train** — `make train` (production config) or `make finalists` /
-   `make pretrain-finetune` for sweeps and transfer learning.
+   `make download-weak-data` + `make weak-splits` (weak-labeled, for pretraining).
+   For post-processing reference data: `scripts/download_dem.py` (Copernicus GLO-30
+   DEM) and `scripts/download_jrc_gsw.py` (JRC permanent water). Or `make dvc-pull`
+   to fetch everything already tracked.
+2. **Train** — `make train` (production SegFormer-B4) or `make finalists` /
+   `make pretrain-finetune` for sweeps and two-stage transfer learning.
 3. **Evaluate** — masked IoU / F1 on a held-out split (`make eval`), test split
-   touched once.
+   touched once. Optional flip-based TTA via `inference.tta` (or `--tta`).
 4. **Infer** — `make predict INPUT=scene.tif OUTPUT=mask.tif` runs a trained
    checkpoint on a full scene, tiling and stitching into a georeferenced
-   flood-mask GeoTIFF. By default, the JRC permanent-water mask is fused into
-   the predicted flood mask (subtracting permanent water from flooded areas).
-   Add `NO_PERMANENT_WATER=1` (or `--no-permanent-water` on the CLI) to disable
-   this fusion. Add `PROB=prob.tif` to also save the per-pixel flood probability
-   as a float32 GeoTIFF. Add `PERMANENT_WATER=permanent_water.tif` (requires
-   `inference.permanent_water` in the config) to also save the JRC permanent-water
-   mask as its own georeferenced GeoTIFF.
+   flood-mask GeoTIFF. By default the JRC permanent-water mask is fused in
+   (subtracting permanent water from flooded areas) and, when
+   `inference.layover_shadow` is configured, DEM-derived layover/shadow regions
+   are handled too. Disable per stage with `NO_PERMANENT_WATER=1` /
+   `NO_LAYOVER_SHADOW=1` (or the matching `--no-*` CLI flags). Add `PROB=prob.tif`
+   for the per-pixel probability, `PERMANENT_WATER=..` / `LAYOVER_SHADOW=..` to
+   also export those masks as their own georeferenced GeoTIFFs.
+5. **Harvest real scenes** — `scripts/pull_s1_scene.py` / `scripts/harvest_s1_scenes.py`
+   pull wide-AOI Sentinel-1 scenes from Google Earth Engine for the fixed demo
+   locations (Baku, Sabirabad, India, Pakistan, Bolivia).
+6. **Publish to the viewer** — `make demo-artifacts` regenerates the mask / SAR
+   PNGs and GeoTIFFs under `web/public/data/` from the demo scenes.
 
 Every run logs to MLflow (params, git SHA, DVC data hash, metrics, checkpoint) —
 see `make mlflow-ui`.
+
+## Web viewer
+
+`web/` is a Next.js 16 / React 19 / TypeScript app (Leaflet + Tailwind 4) that
+browses flood predictions for the fixed demo locations. The overview page shows a
+zone gallery and a severity dashboard; each location page renders a Leaflet map
+with a historical date picker and toggleable layers — flood mask, JRC
+permanent-water (recolored to stay distinct from OSM's river blue), model
+confidence/probability, and the raw SAR scene for verification — plus PNG/GeoTIFF
+download. All data is static (`web/public/data/locations.json` + generated assets,
+produced by `make demo-artifacts`); there is no backend API.
+
+```bash
+cd web
+npm install
+npm run dev     # http://localhost:3000
+npm run build   # production build
+```
+
+## Experiments & studies
+
+- [docs/loss_study.md](docs/loss_study.md) — loss / class-imbalance study.
+- [docs/usa_country_ablation.md](docs/usa_country_ablation.md) — single-country
+  (USA) vs. multi-country training ablation.
+- [docs/fixed_locations.md](docs/fixed_locations.md) — the five fixed evaluation
+  locations. Per-country generalization is measured with the LOCO runner
+  (`scripts/run_loco.py`, `scripts/make_loco_splits.py`).
