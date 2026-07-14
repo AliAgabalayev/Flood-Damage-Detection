@@ -4,6 +4,7 @@ import argparse
 import json
 import logging
 import sys
+import time
 from pathlib import Path
 from typing import Any, Dict, List, Tuple
 
@@ -26,8 +27,10 @@ logger = logging.getLogger(__name__)
 
 # Flood-mask overlay colour: brand orange #c8622a at 60 % opacity.
 _FLOOD_RGBA: Tuple[int, int, int, int] = (200, 98, 42, 153)
-# Permanent-water overlay colour: blue at 60 % opacity.
-_WATER_RGBA: Tuple[int, int, int, int] = (30, 100, 200, 153)
+# Permanent-water overlay colour: teal at 60 % opacity, matching the
+# frontend's --layer-permanent (#0e9488) -- kept clearly distinct from the
+# OSM basemap's own river blue so the two aren't mistaken for each other.
+_WATER_RGBA: Tuple[int, int, int, int] = (14, 148, 136, 153)
 # Layover/shadow overlay colour: grey at 60 % opacity.
 _LAYOVER_SHADOW_RGBA: Tuple[int, int, int, int] = (120, 120, 120, 153)
 
@@ -188,6 +191,8 @@ def main() -> None:
     model  = _load_model(cfg, device)
     logger.info("Loaded model on %s", device)
 
+    cache_bust = int(time.time())
+
     updated = []
     for loc in locations:
         if loc not in have_scene:
@@ -208,14 +213,14 @@ def main() -> None:
             "date": date_str,
             "flooded_area_km2": area_km2,
             "flooded_pct": pct,
-            "mask_url":    f"/data/{loc_id}/{date_str}/flood_mask.png",
-            "sar_url":     f"/data/{loc_id}/{date_str}/sar.png",
-            "geotiff_url": f"/data/{loc_id}/{date_str}/flood_mask.tif",
+            "mask_url":    f"/data/{loc_id}/{date_str}/flood_mask.png?v={cache_bust}",
+            "sar_url":     f"/data/{loc_id}/{date_str}/sar.png?v={cache_bust}",
+            "geotiff_url": f"/data/{loc_id}/{date_str}/flood_mask.tif?v={cache_bust}",
         }
         if cfg.inference.permanent_water is not None:
-            new_scene["permanent_water_url"] = f"/data/{loc_id}/{date_str}/permanent_water.png"
+            new_scene["permanent_water_url"] = f"/data/{loc_id}/{date_str}/permanent_water.png?v={cache_bust}"
         if cfg.inference.layover_shadow is not None:
-            new_scene["layover_shadow_url"] = f"/data/{loc_id}/{date_str}/layover_shadow.png"
+            new_scene["layover_shadow_url"] = f"/data/{loc_id}/{date_str}/layover_shadow.png?v={cache_bust}"
 
         loc["center"] = center
         loc["bounds"] = bounds

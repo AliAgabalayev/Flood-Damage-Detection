@@ -160,6 +160,7 @@ export default function LocationView({ location }: Props) {
           <LayerRow color="var(--layer-water)" label="Flood mask" available={!!activeScene.mask_url} />
           <LayerRow color="var(--layer-permanent)" label="Permanent water (JRC)" available={!!activeScene.permanent_water_url} />
           <LayerRow color="var(--layer-confidence)" label="Model confidence" available={!!activeScene.probability_url} />
+          <LayerRow color="var(--text-500)" label="Raw SAR scene (verify layers)" available={!!activeScene.sar_url} />
         </div>
         <p className="text-[11px] mb-6 -mt-3" style={{ color: "var(--text-300)" }}>
           Toggle layers from the buttons on the map.

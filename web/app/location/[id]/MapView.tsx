@@ -14,9 +14,11 @@ export default function MapView({ location, scene }: Props) {
   const overlayRef = useRef<unknown>(null);
   const permanentWaterOverlayRef = useRef<unknown>(null);
   const confidenceOverlayRef = useRef<unknown>(null);
+  const sarOverlayRef = useRef<unknown>(null);
   const [maskVisible, setMaskVisible] = useState(true);
   const [permanentWaterVisible, setPermanentWaterVisible] = useState(false);
   const [confidenceVisible, setConfidenceVisible] = useState(false);
+  const [sarVisible, setSarVisible] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [zoomedCell, setZoomedCell] = useState<number | null>(null);
@@ -55,8 +57,9 @@ export default function MapView({ location, scene }: Props) {
 
         map = L.map(mapRef.current, {
           zoomControl: true,
+          zoomSnap: 0.1,
         });
-        map.fitBounds(location.bounds);
+        map.fitBounds(location.bounds, { padding: [0, 0] });
 
         L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
           attribution: "© OpenStreetMap contributors",
@@ -64,6 +67,12 @@ export default function MapView({ location, scene }: Props) {
         }).addTo(map as never);
 
         const bounds: [[number, number], [number, number]] = location.bounds;
+
+        if (scene.sar_url) {
+          const sarOverlay = L.imageOverlay(scene.sar_url, bounds, { opacity: 0 });
+          sarOverlay.addTo(map as never);
+          sarOverlayRef.current = sarOverlay;
+        }
 
         if (scene.mask_url) {
           const overlay = L.imageOverlay(scene.mask_url, bounds, { opacity: 0.6 });
@@ -101,6 +110,7 @@ export default function MapView({ location, scene }: Props) {
         overlayRef.current = null;
         permanentWaterOverlayRef.current = null;
         confidenceOverlayRef.current = null;
+        sarOverlayRef.current = null;
       }
     };
   }, [location, scene]);
@@ -123,18 +133,24 @@ export default function MapView({ location, scene }: Props) {
     overlay.setOpacity(confidenceVisible ? 0.7 : 0);
   }, [confidenceVisible]);
 
+  useEffect(() => {
+    if (!sarOverlayRef.current) return;
+    const overlay = sarOverlayRef.current as { setOpacity: (o: number) => void };
+    overlay.setOpacity(sarVisible ? 1 : 0);
+  }, [sarVisible]);
+
   const zoomToCell = useCallback((index: number) => {
     if (!mapInstanceRef.current) return;
     const map = mapInstanceRef.current as { fitBounds: (b: unknown, opts: unknown) => void };
     const cellBounds = subBoundsGrid[index];
-    map.fitBounds(cellBounds, { animate: true });
+    map.fitBounds(cellBounds, { animate: true, padding: [0, 0] });
     setZoomedCell(index);
   }, [subBoundsGrid]);
 
   const resetZoom = useCallback(() => {
     if (!mapInstanceRef.current) return;
     const map = mapInstanceRef.current as { fitBounds: (b: unknown, opts: unknown) => void };
-    map.fitBounds(originalBounds, { animate: true });
+    map.fitBounds(originalBounds, { animate: true, padding: [0, 0] });
     setZoomedCell(null);
   }, [originalBounds]);
 
@@ -261,6 +277,23 @@ export default function MapView({ location, scene }: Props) {
               JRC layer pending
             </div>
           )}
+
+          {scene.sar_url ? (
+            <button
+              onClick={() => setSarVisible((v) => !v)}
+              className="flex items-center gap-2 text-xs font-medium px-3 py-2 rounded-lg transition-all"
+              style={{
+                background: sarVisible ? "var(--panel-sunken)" : "var(--panel)",
+                border: sarVisible ? "1px solid var(--text-300)" : "1px solid var(--line)",
+                color: sarVisible ? "var(--text-900)" : "var(--text-500)",
+                boxShadow: "0 1px 4px rgba(13,31,51,0.08)",
+              }}
+              title="Show the raw Sentinel-1 SAR scene in place of the basemap, to verify layers against the real satellite image"
+            >
+              <div style={{ width: 7, height: 7, borderRadius: "50%", background: sarVisible ? "var(--text-500)" : "#c9d3dd" }} />
+              {sarVisible ? "SAR image on" : "SAR image off"}
+            </button>
+          ) : null}
 
           {scene.probability_url ? (
             <button
