@@ -3,17 +3,17 @@
     "id": "baku",
     "name": "Baku, Azerbaijan",
     "center": [
-      40.427062,
-      49.922974
+      40.430027,
+      49.92504
     ],
     "bounds": [
       [
-        40.404066,
-        49.899977
+        40.329955,
+        49.799994
       ],
       [
-        40.450059,
-        49.94597
+        40.530099,
+        50.050085
       ]
     ],
     "model": "segformer_b4",
@@ -21,14 +21,14 @@
       {
         "scene_id": "legacy_2026-04-07",
         "date": "2026-04-07",
-        "flooded_area_km2": 0.04,
-        "flooded_pct": 0.18,
-        "mask_url": "/data/baku/2026-04-07/flood_mask.png?v=1783947321",
-        "sar_url": "/data/baku/2026-04-07/sar.png?v=1783947321",
-        "geotiff_url": "/data/baku/2026-04-07/flood_mask.tif?v=1783947321",
-        "permanent_water_url": "/data/baku/2026-04-07/permanent_water.png?v=1783947321",
+        "flooded_area_km2": 3.15,
+        "flooded_pct": 0.67,
+        "mask_url": "/data/baku/2026-04-07/flood_mask.png?v=1784007064",
+        "sar_url": "/data/baku/2026-04-07/sar.png?v=1784007064",
+        "geotiff_url": "/data/baku/2026-04-07/flood_mask.tif?v=1784007064",
+        "permanent_water_url": "/data/baku/2026-04-07/permanent_water.png?v=1784007064",
         "probability_url": null,
-        "layover_shadow_url": "/data/baku/2026-04-07/layover_shadow.png?v=1783947321"
+        "layover_shadow_url": "/data/baku/2026-04-07/layover_shadow.png?v=1784007064"
       }
     ]
   },
@@ -56,12 +56,12 @@
         "date": "2026-06-30",
         "flooded_area_km2": 0.23,
         "flooded_pct": 1.13,
-        "mask_url": "/data/sabirabad/2026-06-30/flood_mask.png?v=1783947321",
-        "sar_url": "/data/sabirabad/2026-06-30/sar.png?v=1783947321",
-        "geotiff_url": "/data/sabirabad/2026-06-30/flood_mask.tif?v=1783947321",
-        "permanent_water_url": "/data/sabirabad/2026-06-30/permanent_water.png?v=1783947321",
+        "mask_url": "/data/sabirabad/2026-06-30/flood_mask.png?v=1784007064",
+        "sar_url": "/data/sabirabad/2026-06-30/sar.png?v=1784007064",
+        "geotiff_url": "/data/sabirabad/2026-06-30/flood_mask.tif?v=1784007064",
+        "permanent_water_url": "/data/sabirabad/2026-06-30/permanent_water.png?v=1784007064",
         "probability_url": null,
-        "layover_shadow_url": "/data/sabirabad/2026-06-30/layover_shadow.png?v=1783947321"
+        "layover_shadow_url": "/data/sabirabad/2026-06-30/layover_shadow.png?v=1784007064"
       }
     ]
   },
@@ -89,12 +89,12 @@
         "date": "2016-08-12",
         "flooded_area_km2": 1.44,
         "flooded_pct": 6.14,
-        "mask_url": "/data/india/2016-08-12/flood_mask.png?v=1783947321",
-        "sar_url": "/data/india/2016-08-12/sar.png?v=1783947321",
-        "geotiff_url": "/data/india/2016-08-12/flood_mask.tif?v=1783947321",
-        "permanent_water_url": "/data/india/2016-08-12/permanent_water.png?v=1783947321",
+        "mask_url": "/data/india/2016-08-12/flood_mask.png?v=1784007064",
+        "sar_url": "/data/india/2016-08-12/sar.png?v=1784007064",
+        "geotiff_url": "/data/india/2016-08-12/flood_mask.tif?v=1784007064",
+        "permanent_water_url": "/data/india/2016-08-12/permanent_water.png?v=1784007064",
         "probability_url": null,
-        "layover_shadow_url": "/data/india/2016-08-12/layover_shadow.png?v=1783947321"
+        "layover_shadow_url": "/data/india/2016-08-12/layover_shadow.png?v=1784007064"
       }
     ]
   },
@@ -122,12 +122,12 @@
         "date": "2017-09-01",
         "flooded_area_km2": 6.44,
         "flooded_pct": 29.15,
-        "mask_url": "/data/pakistan/2017-09-01/flood_mask.png?v=1783947321",
-        "sar_url": "/data/pakistan/2017-09-01/sar.png?v=1783947321",
-        "geotiff_url": "/data/pakistan/2017-09-01/flood_mask.tif?v=1783947321",
-        "permanent_water_url": "/data/pakistan/2017-09-01/permanent_water.png?v=1783947321",
+        "mask_url": "/data/pakistan/2017-09-01/flood_mask.png?v=1784007064",
+        "sar_url": "/data/pakistan/2017-09-01/sar.png?v=1784007064",
+        "geotiff_url": "/data/pakistan/2017-09-01/flood_mask.tif?v=1784007064",
+        "permanent_water_url": "/data/pakistan/2017-09-01/permanent_water.png?v=1784007064",
         "probability_url": null,
-        "layover_shadow_url": "/data/pakistan/2017-09-01/layover_shadow.png?v=1783947321"
+        "layover_shadow_url": "/data/pakistan/2017-09-01/layover_shadow.png?v=1784007064"
       }
     ]
   },
@@ -155,12 +155,12 @@
         "date": "2018-02-15",
         "flooded_area_km2": 18.29,
         "flooded_pct": 72.06,
-        "mask_url": "/data/bolivia/2018-02-15/flood_mask.png?v=1783947321",
-        "sar_url": "/data/bolivia/2018-02-15/sar.png?v=1783947321",
-        "geotiff_url": "/data/bolivia/2018-02-15/flood_mask.tif?v=1783947321",
-        "permanent_water_url": "/data/bolivia/2018-02-15/permanent_water.png?v=1783947321",
+        "mask_url": "/data/bolivia/2018-02-15/flood_mask.png?v=1784007064",
+        "sar_url": "/data/bolivia/2018-02-15/sar.png?v=1784007064",
+        "geotiff_url": "/data/bolivia/2018-02-15/flood_mask.tif?v=1784007064",
+        "permanent_water_url": "/data/bolivia/2018-02-15/permanent_water.png?v=1784007064",
         "probability_url": null,
-        "layover_shadow_url": "/data/bolivia/2018-02-15/layover_shadow.png?v=1783947321"
+        "layover_shadow_url": "/data/bolivia/2018-02-15/layover_shadow.png?v=1784007064"
       }
     ]
   }
