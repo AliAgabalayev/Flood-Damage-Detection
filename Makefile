@@ -4,7 +4,7 @@ MLFLOW_URI ?= sqlite:///mlflow.db
 
 .DEFAULT_GOAL := help
 
-.PHONY: help install config train eval predict demo-artifacts finalists download-weak-data weak-splits pretrain-finetune vast-bootstrap mlflow-ui dvc-push dvc-pull jury-bundle fetch-jury-data lint
+.PHONY: help install config train eval predict serve-api demo-artifacts finalists download-weak-data weak-splits pretrain-finetune vast-bootstrap mlflow-ui dvc-push dvc-pull jury-bundle fetch-jury-data lint
 
 FINALISTS_MATRIX := config/experiments/loss_finalists.yaml
 FINALISTS_CKPT := models/loss_finalists
@@ -15,6 +15,7 @@ help:
 	@echo "train      train baseline (DeepLabV3+)"
 	@echo "eval       evaluate a checkpoint on a split"
 	@echo "predict    tiled predict to GeoTIFF (INPUT=.. OUTPUT=.. PROB=<optional prob GeoTIFF> PERMANENT_WATER=<optional permanent-water mask GeoTIFF> LAYOVER_SHADOW=<optional layover/shadow mask GeoTIFF> NO_PERMANENT_WATER=1 NO_LAYOVER_SHADOW=1)"
+	@echo "serve-api  run the FastAPI inference service (POST /predict) on :8000"
 	@echo "demo-artifacts  regenerate web/public/data/<id> mask/SAR PNGs + GeoTIFF for locations with a scene in data/demo_scenes"
 	@echo "finalists  run M1b loss finalists (ONLY=<run_name> for a single run)"
 	@echo "download-weak-data  download Sen1Floods11 weak-labeled chips (~6.8 GiB)"
@@ -50,6 +51,9 @@ predict:
 		$(if $(LAYOVER_SHADOW),--layover-shadow-output $(LAYOVER_SHADOW),) \
 		$(if $(NO_PERMANENT_WATER),--no-permanent-water,) \
 		$(if $(NO_LAYOVER_SHADOW),--no-layover-shadow,)
+
+serve-api:
+	$(PY) -m uvicorn api.app:app --host 0.0.0.0 --port 8000
 
 demo-artifacts:
 	$(PY) scripts/generate_demo_artifacts.py --config $(CONFIG)
