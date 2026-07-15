@@ -45,6 +45,7 @@ make train                       # train the production baseline (SegFormer-B4)
 make eval                        # evaluate a checkpoint on a split
 make predict INPUT=.. OUTPUT=.. [PROB=..] [PERMANENT_WATER=..] [LAYOVER_SHADOW=..] \
              [NO_PERMANENT_WATER=1] [NO_LAYOVER_SHADOW=1]   # tiled predict -> georeferenced GeoTIFF
+make serve-api                   # FastAPI inference service for the web viewer's /upload page (:8000)
 make finalists [ONLY=<run_name>] # architecture/loss sweep runs
 make download-weak-data          # Sen1Floods11 weak-labeled chips (~6.8 GiB)
 make weak-splits                 # build train/val split CSVs for the weak chips
@@ -116,12 +117,13 @@ Flood-Damage-Detection/
 ├── notebooks/              # EDA + Colab sweep notebooks
 ├── scripts/                # data download/harvest, split generation, sweep/pretrain-finetune runners, demo artifacts
 ├── src/
+│   ├── api/                # FastAPI /predict service backing the web viewer's upload page
 │   ├── data/               # dataset, datamodule, preprocessing, transforms, split loader
 │   ├── models/             # architecture registry + SegFormer wrapper (build.py)
 │   ├── training/           # Lightning module, losses, train loop, MLflow logging
 │   ├── inference/          # tiling, stitching, TTA, postprocess, permanent-water, predict, evaluate
 │   └── utils/              # config (pydantic), MLflow helpers
-├── web/                    # Next.js map viewer (flood-mask browser)
+├── web/                    # Next.js map viewer (flood-mask browser + custom SAR upload)
 └── Makefile
 ```
 
@@ -162,8 +164,8 @@ zone gallery and a severity dashboard; each location page renders a Leaflet map
 with a historical date picker and toggleable layers — flood mask, JRC
 permanent-water (recolored to stay distinct from OSM's river blue), model
 confidence/probability, and the raw SAR scene for verification — plus PNG/GeoTIFF
-download. All data is static (`web/public/data/locations.json` + generated assets,
-produced by `make demo-artifacts`); there is no backend API.
+download. All data for the fixed demo locations is static (`web/public/data/locations.json`
++ generated assets, produced by `make demo-artifacts`) — no backend needed.
 
 ```bash
 cd web
@@ -171,6 +173,18 @@ npm install
 npm run dev     # http://localhost:3000
 npm run build   # production build
 ```
+
+### Custom SAR upload
+
+The **Upload your own SAR scene** page (`/upload`) is the one part of the viewer
+that isn't static — it POSTs a GeoTIFF to a FastAPI inference service and needs
+that service running first:
+
+```bash
+make serve-api   # runs on :8000, loads the production checkpoint once at startup
+```
+
+The page calls `NEXT_PUBLIC_API_BASE_URL` if set, otherwise `http://localhost:8000`.
 
 ## Experiments & studies
 
