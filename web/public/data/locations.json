@@ -23,10 +23,10 @@
         "date": "2026-04-07",
         "flooded_area_km2": 3.15,
         "flooded_pct": 0.67,
-        "mask_url": "/data/baku/2026-04-07/flood_mask.png?v=1784008651",
+        "mask_url": "/data/baku/2026-04-07/flood_mask.png?v=1784108506",
         "sar_url": "/data/baku/2026-04-07/sar.png?v=1784008651",
         "geotiff_url": "/data/baku/2026-04-07/flood_mask.tif?v=1784008651",
-        "permanent_water_url": "/data/baku/2026-04-07/permanent_water.png?v=1784008651",
+        "permanent_water_url": "/data/baku/2026-04-07/permanent_water.png?v=1784109217",
         "probability_url": null,
         "layover_shadow_url": "/data/baku/2026-04-07/layover_shadow.png?v=1784008651"
       }
@@ -56,10 +56,10 @@
         "date": "2026-06-30",
         "flooded_area_km2": 2.04,
         "flooded_pct": 0.46,
-        "mask_url": "/data/sabirabad/2026-06-30/flood_mask.png?v=1784008651",
+        "mask_url": "/data/sabirabad/2026-06-30/flood_mask.png?v=1784108506",
         "sar_url": "/data/sabirabad/2026-06-30/sar.png?v=1784008651",
         "geotiff_url": "/data/sabirabad/2026-06-30/flood_mask.tif?v=1784008651",
-        "permanent_water_url": "/data/sabirabad/2026-06-30/permanent_water.png?v=1784008651",
+        "permanent_water_url": "/data/sabirabad/2026-06-30/permanent_water.png?v=1784109217",
         "probability_url": null,
         "layover_shadow_url": "/data/sabirabad/2026-06-30/layover_shadow.png?v=1784008651"
       }
@@ -89,10 +89,10 @@
         "date": "2016-08-12",
         "flooded_area_km2": 10.76,
         "flooded_pct": 10.44,
-        "mask_url": "/data/india/2016-08-12/flood_mask.png?v=1784008651",
+        "mask_url": "/data/india/2016-08-12/flood_mask.png?v=1784108506",
         "sar_url": "/data/india/2016-08-12/sar.png?v=1784008651",
         "geotiff_url": "/data/india/2016-08-12/flood_mask.tif?v=1784008651",
-        "permanent_water_url": "/data/india/2016-08-12/permanent_water.png?v=1784008651",
+        "permanent_water_url": "/data/india/2016-08-12/permanent_water.png?v=1784109217",
         "probability_url": null,
         "layover_shadow_url": "/data/india/2016-08-12/layover_shadow.png?v=1784008651"
       }
@@ -122,10 +122,10 @@
         "date": "2017-09-01",
         "flooded_area_km2": 45.88,
         "flooded_pct": 10.3,
-        "mask_url": "/data/pakistan/2017-09-01/flood_mask.png?v=1784008651",
+        "mask_url": "/data/pakistan/2017-09-01/flood_mask.png?v=1784108506",
         "sar_url": "/data/pakistan/2017-09-01/sar.png?v=1784008651",
         "geotiff_url": "/data/pakistan/2017-09-01/flood_mask.tif?v=1784008651",
-        "permanent_water_url": "/data/pakistan/2017-09-01/permanent_water.png?v=1784008651",
+        "permanent_water_url": "/data/pakistan/2017-09-01/permanent_water.png?v=1784109217",
         "probability_url": null,
         "layover_shadow_url": "/data/pakistan/2017-09-01/layover_shadow.png?v=1784008651"
       }
@@ -155,10 +155,10 @@
         "date": "2018-02-15",
         "flooded_area_km2": 216.97,
         "flooded_pct": 48.72,
-        "mask_url": "/data/bolivia/2018-02-15/flood_mask.png?v=1784008651",
+        "mask_url": "/data/bolivia/2018-02-15/flood_mask.png?v=1784108506",
         "sar_url": "/data/bolivia/2018-02-15/sar.png?v=1784008651",
         "geotiff_url": "/data/bolivia/2018-02-15/flood_mask.tif?v=1784008651",
-        "permanent_water_url": "/data/bolivia/2018-02-15/permanent_water.png?v=1784008651",
+        "permanent_water_url": "/data/bolivia/2018-02-15/permanent_water.png?v=1784109217",
         "probability_url": null,
         "layover_shadow_url": "/data/bolivia/2018-02-15/layover_shadow.png?v=1784008651"
       }

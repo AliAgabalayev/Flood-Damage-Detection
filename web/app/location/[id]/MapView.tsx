@@ -73,7 +73,7 @@ export default function MapView({ location, scene }: Props) {
         }
 
         if (scene.mask_url) {
-          const overlay = L.imageOverlay(scene.mask_url, bounds, { opacity: 0.6 });
+          const overlay = L.imageOverlay(scene.mask_url, bounds, { opacity: 0.85 });
           overlay.addTo(map as never);
           overlayRef.current = overlay;
         }
@@ -109,13 +109,13 @@ export default function MapView({ location, scene }: Props) {
   useEffect(() => {
     if (!overlayRef.current) return;
     const overlay = overlayRef.current as { setOpacity: (o: number) => void };
-    overlay.setOpacity(maskVisible ? 0.6 : 0);
+    overlay.setOpacity(maskVisible ? 0.85 : 0);
   }, [maskVisible]);
 
   useEffect(() => {
     if (!permanentWaterOverlayRef.current) return;
     const overlay = permanentWaterOverlayRef.current as { setOpacity: (o: number) => void };
-    overlay.setOpacity(permanentWaterVisible ? 0.55 : 0);
+    overlay.setOpacity(permanentWaterVisible ? 0.7 : 0);
   }, [permanentWaterVisible]);
 
   useEffect(() => {

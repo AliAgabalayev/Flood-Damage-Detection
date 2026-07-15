@@ -22,8 +22,8 @@
   --glow: #4fc3f7;
 
   /* layer accents (kept distinct from signal blue + severity ramp) */
-  --layer-water: #0080ff;
-  --layer-permanent: #4682b4;
+  --layer-water: #0067ee;
+  --layer-permanent: #347ca2;
   --layer-confidence: #7c5cff;
 
   /* text on light surfaces */

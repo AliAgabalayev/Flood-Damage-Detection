@@ -9,8 +9,8 @@ from PIL import Image
 
 RGBA = Tuple[int, int, int, int]
 
-FLOOD_RGBA: RGBA = (0, 128, 255, 178)     # very bright vivid blue — matches --layer-water
-WATER_RGBA: RGBA = (70, 130, 180, 130)    # muted, mild blue — matches --layer-permanent
+FLOOD_RGBA: RGBA = (0, 103, 238, 200)      # #0067ee — matches --layer-water
+WATER_RGBA: RGBA = (52, 124, 162, 210)     # darker version of the same OSM-water-like blue — matches --layer-permanent
 LAYOVER_SHADOW_RGBA: RGBA = (120, 120, 120, 153)
 
 
