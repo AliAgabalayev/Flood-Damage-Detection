@@ -26,7 +26,7 @@
         "mask_url": "/data/baku/2026-04-07/flood_mask.png?v=1784108506",
         "sar_url": "/data/baku/2026-04-07/sar.png?v=1784008651",
         "geotiff_url": "/data/baku/2026-04-07/flood_mask.tif?v=1784008651",
-        "permanent_water_url": "/data/baku/2026-04-07/permanent_water.png?v=1784108026",
+        "permanent_water_url": "/data/baku/2026-04-07/permanent_water.png?v=1784109217",
         "probability_url": null,
         "layover_shadow_url": "/data/baku/2026-04-07/layover_shadow.png?v=1784008651"
       }
@@ -59,7 +59,7 @@
         "mask_url": "/data/sabirabad/2026-06-30/flood_mask.png?v=1784108506",
         "sar_url": "/data/sabirabad/2026-06-30/sar.png?v=1784008651",
         "geotiff_url": "/data/sabirabad/2026-06-30/flood_mask.tif?v=1784008651",
-        "permanent_water_url": "/data/sabirabad/2026-06-30/permanent_water.png?v=1784108026",
+        "permanent_water_url": "/data/sabirabad/2026-06-30/permanent_water.png?v=1784109217",
         "probability_url": null,
         "layover_shadow_url": "/data/sabirabad/2026-06-30/layover_shadow.png?v=1784008651"
       }
@@ -92,7 +92,7 @@
         "mask_url": "/data/india/2016-08-12/flood_mask.png?v=1784108506",
         "sar_url": "/data/india/2016-08-12/sar.png?v=1784008651",
         "geotiff_url": "/data/india/2016-08-12/flood_mask.tif?v=1784008651",
-        "permanent_water_url": "/data/india/2016-08-12/permanent_water.png?v=1784108026",
+        "permanent_water_url": "/data/india/2016-08-12/permanent_water.png?v=1784109217",
         "probability_url": null,
         "layover_shadow_url": "/data/india/2016-08-12/layover_shadow.png?v=1784008651"
       }
@@ -125,7 +125,7 @@
         "mask_url": "/data/pakistan/2017-09-01/flood_mask.png?v=1784108506",
         "sar_url": "/data/pakistan/2017-09-01/sar.png?v=1784008651",
         "geotiff_url": "/data/pakistan/2017-09-01/flood_mask.tif?v=1784008651",
-        "permanent_water_url": "/data/pakistan/2017-09-01/permanent_water.png?v=1784108026",
+        "permanent_water_url": "/data/pakistan/2017-09-01/permanent_water.png?v=1784109217",
         "probability_url": null,
         "layover_shadow_url": "/data/pakistan/2017-09-01/layover_shadow.png?v=1784008651"
       }
@@ -158,7 +158,7 @@
         "mask_url": "/data/bolivia/2018-02-15/flood_mask.png?v=1784108506",
         "sar_url": "/data/bolivia/2018-02-15/sar.png?v=1784008651",
         "geotiff_url": "/data/bolivia/2018-02-15/flood_mask.tif?v=1784008651",
-        "permanent_water_url": "/data/bolivia/2018-02-15/permanent_water.png?v=1784108026",
+        "permanent_water_url": "/data/bolivia/2018-02-15/permanent_water.png?v=1784109217",
         "probability_url": null,
         "layover_shadow_url": "/data/bolivia/2018-02-15/layover_shadow.png?v=1784008651"
       }

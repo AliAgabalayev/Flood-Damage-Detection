@@ -115,7 +115,7 @@ export default function MapView({ location, scene }: Props) {
   useEffect(() => {
     if (!permanentWaterOverlayRef.current) return;
     const overlay = permanentWaterOverlayRef.current as { setOpacity: (o: number) => void };
-    overlay.setOpacity(permanentWaterVisible ? 0.45 : 0);
+    overlay.setOpacity(permanentWaterVisible ? 0.7 : 0);
   }, [permanentWaterVisible]);
 
   useEffect(() => {
