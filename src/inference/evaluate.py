@@ -1,20 +1,16 @@
 import argparse
-import gc
 import os
 
 os.environ.setdefault("GDAL_CACHEMAX", "128")
 
-import numpy as np
 import torch
 from torch import Tensor
 from torch.utils.data import DataLoader
 from torchmetrics import MetricCollection
 from torchmetrics.classification import BinaryF1Score, BinaryJaccardIndex
 
-from inference.postprocess import postprocess
-from inference.stitching import binarize
 from inference.tta import predict_prob
-from utils.config import Config, load_config
+from utils.config import load_config
 
 
 def build_scorer() -> MetricCollection:
@@ -26,24 +22,9 @@ def masked_select(prob: Tensor, target: Tensor, mask: Tensor) -> tuple[Tensor, T
     return prob[valid], target[valid].int()
 
 
-def _has_postprocessing(cfg: Config) -> bool:
-    return cfg.inference.permanent_water is not None or cfg.inference.layover_shadow is not None
-
-
-def _fused_batch(prob: Tensor, paths: list[str], cfg: Config) -> Tensor:
-    binary = binarize(prob.detach().cpu().numpy(), threshold=cfg.inference.threshold)
-    results = []
-    for i in range(binary.shape[0]):
-        results.append(postprocess(binary[i, 0], paths[i], cfg)[0])
-        gc.collect()
-    fused = np.stack(results)[:, None, :, :]
-    return torch.from_numpy(fused).float().to(prob.device)
-
-
-def evaluate(model: torch.nn.Module, loader: DataLoader, device: str, tta: bool = False, cfg: Config | None = None) -> dict:
+def evaluate(model: torch.nn.Module, loader: DataLoader, device: str, tta: bool = False) -> dict:
     model.eval().to(device)
     scorer = build_scorer().to(device)
-    fused_scorer = build_scorer().to(device) if cfg is not None and _has_postprocessing(cfg) else None
 
     with torch.no_grad():
         for img, lbl, mask, paths in loader:
@@ -54,15 +35,7 @@ def evaluate(model: torch.nn.Module, loader: DataLoader, device: str, tta: bool 
             p, truth = masked_select(prob, target, valid)
             scorer.update(p, truth)
 
-            if fused_scorer is not None:
-                fused_prob = _fused_batch(prob, paths, cfg)
-                fp, ftruth = masked_select(fused_prob, target, valid)
-                fused_scorer.update(fp, ftruth)
-
-    result = {k: float(v) for k, v in scorer.compute().items()}
-    if fused_scorer is not None:
-        result["fused"] = {k: float(v) for k, v in fused_scorer.compute().items()}
-    return result
+    return {k: float(v) for k, v in scorer.compute().items()}
 
 
 def main() -> None:
@@ -78,8 +51,7 @@ def main() -> None:
 
     # This is a one-off sequential scoring run, not training -- persistent
     # DataLoader workers just add idle process overhead here (each one imports
-    # torch/rasterio fresh), and the fused-metrics path is already CPU/IO-bound
-    # per sample. Skip the worker pool entirely.
+    # torch/rasterio fresh). Skip the worker pool entirely.
     cfg.data.num_workers = 0
 
     dm = FloodDataModule(cfg)
@@ -91,7 +63,7 @@ def main() -> None:
     device = "cuda" if cfg.training.device == "cuda" and torch.cuda.is_available() else "cpu"
     loader = dm.test_dataloader() if args.split == "test" else dm.val_dataloader()
     tta = cfg.inference.tta if args.tta is None else args.tta
-    print(evaluate(model, loader, device, tta=tta, cfg=cfg))
+    print(evaluate(model, loader, device, tta=tta))
 
 
 if __name__ == "__main__":
