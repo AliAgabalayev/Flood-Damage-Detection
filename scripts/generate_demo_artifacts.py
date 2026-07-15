@@ -25,8 +25,9 @@ from utils.config import Config, load_config
 
 logger = logging.getLogger(__name__)
 
-# Flood-mask overlay colour: brand orange #c8622a at 60 % opacity.
-_FLOOD_RGBA: Tuple[int, int, int, int] = (200, 98, 42, 153)
+# Flood-mask overlay colour: red #e60000 at 60 % opacity, matching
+# the frontend's --layer-water.
+_FLOOD_RGBA: Tuple[int, int, int, int] = (230, 0, 0, 153)
 # Permanent-water overlay colour: teal at 60 % opacity, matching the
 # frontend's --layer-permanent (#0e9488) -- kept clearly distinct from the
 # OSM basemap's own river blue so the two aren't mistaken for each other.
