@@ -1,6 +1,6 @@
-# FlooScan
+# Sea the Flood
 
-<img src="docs/assets/logo.png" alt="FlooScan logo" width="700">
+<img src="docs/assets/logo.jpg" alt="Sea the Flood logo" width="700">
 
 ## Team: Gale
 
@@ -20,7 +20,7 @@ DEM-derived layover/shadow post-processing, and browsable in a Next.js map viewe
 |:------------|:----------------|
 | **Ali Agabalazade** | Team Lead, DL Engineer, Data Engineering, Documentation |
 | **Nigar Rustamova** | Training Optimization, Backend Development, Model Development |
-| **Isgandar Panahov** | Frontend Development, User Interface Design, Project Presentation |
+| **Isgandar Panahov** | Frontend Development, User Interface Design, model Evaluation |
 | **Jala Suleymanova** | Data Engineering, Data Pipeline Development, Documentation, Presentation |
 
 ## Decisions (locked)

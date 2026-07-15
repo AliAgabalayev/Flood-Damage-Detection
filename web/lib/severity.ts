@@ -1,7 +1,3 @@
-// Sequential color ramp for encoding flood severity (% of area flooded).
-// Kept separate from the brand/active-state accent (--accent in globals.css)
-// so a 5% reading and a 70% reading are visually distinguishable.
-
 const STOPS: [number, string][] = [
   [0, "#d8cfa0"],
   [10, "#e0b25a"],

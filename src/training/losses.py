@@ -11,25 +11,7 @@ LOSSES = {
 
 
 class MaskedLoss(nn.Module):
-    """Segmentation loss that ignores invalid pixels via a per-pixel mask.
-
-    Modes:
-      * ``bce``           — pixel-wise BCE-with-logits, optional ``pos_weight``
-                            to up-weight the rare flood class.
-      * ``dice``          — soft Dice (region overlap); imbalance-robust.
-      * ``focal``         — focal loss; ``alpha`` balances classes, ``gamma``
-                            focuses learning on hard/rare pixels.
-      * ``dice_bce``      — ``bce_weight * BCE + dice_weight * Dice``.
-      * ``tversky``       — generalised Dice; ``beta > alpha`` penalises false
-                            negatives more, boosting flood recall.
-      * ``focal_tversky`` — Tversky with a focusing exponent (``tversky_gamma``).
-      * ``lovasz``        — Lovász hinge, a direct differentiable IoU surrogate.
-      * ``dice_focal``    — ``dice_weight * Dice + focal``.
-
-    All modes respect ``mask`` (1 = valid, 0 = ignore). For the overlap/focal
-    losses the invalid logits are pushed to a large negative value and the target
-    zeroed so those pixels contribute as confident true-negatives.
-    """
+    #Segmentation loss that ignores invalid pixels via a per-pixel mask
 
     def __init__(
         self,
