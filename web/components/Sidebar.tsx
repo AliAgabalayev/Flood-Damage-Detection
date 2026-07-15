@@ -41,7 +41,7 @@ export default function Sidebar({ locations, activeId }: Props) {
             className="text-[15px] font-semibold tracking-tight leading-none"
             style={{ fontFamily: "var(--font-display)", color: "var(--text-on-navy)" }}
           >
-            FloodScan
+            Sea the Flood
           </div>
           <div
             className="text-[10px] mt-1 tracking-wide"
