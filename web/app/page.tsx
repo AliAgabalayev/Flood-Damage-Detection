@@ -123,6 +123,29 @@ export default function Home() {
               </Link>
             );
           })}
+
+          <Link href="/upload" className="block group">
+            <div
+              className="rounded-2xl h-full min-h-[220px] flex flex-col items-center justify-center gap-2 transition-all group-hover:-translate-y-0.5"
+              style={{
+                border: "1.5px dashed var(--line)",
+                background: "var(--panel-sunken)",
+              }}
+            >
+              <span
+                className="w-9 h-9 rounded-full flex items-center justify-center text-xl font-semibold"
+                style={{ background: "var(--panel)", color: "var(--signal)", border: "1px solid var(--line)" }}
+              >
+                +
+              </span>
+              <span className="text-sm font-medium" style={{ color: "var(--text-900)" }}>
+                Upload your own SAR scene
+              </span>
+              <span className="text-[11px] px-4 text-center" style={{ color: "var(--text-300)" }}>
+                Run the model on a Sentinel-1 GeoTIFF in real time
+              </span>
+            </div>
+          </Link>
         </div>
       </main>
 

@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 set -euo pipefail
 
 FILE_ID="1Weldocl5FMnqkhx-Pw19rxKOeQIdzWKx"

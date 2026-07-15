@@ -26,6 +26,11 @@ PyYAML==6.0.3
 mlflow==3.14.0        # experiment tracking (sqlite backend)
 dvc[gdrive]==3.67.1   # data + model versioning (shared remote: Google Drive)
 
+# --- Inference API (src/api) ---
+fastapi==0.138.0
+uvicorn==0.49.0
+python-multipart==0.0.32  # multipart file uploads for POST /predict
+
 # --- Comparison track: YOLO-seg (Phase 4 / M5) ---
 ultralytics==8.4.76
 

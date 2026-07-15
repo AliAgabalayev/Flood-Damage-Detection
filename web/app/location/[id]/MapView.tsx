@@ -13,11 +13,9 @@ export default function MapView({ location, scene }: Props) {
   const mapInstanceRef = useRef<unknown>(null);
   const overlayRef = useRef<unknown>(null);
   const permanentWaterOverlayRef = useRef<unknown>(null);
-  const confidenceOverlayRef = useRef<unknown>(null);
   const sarOverlayRef = useRef<unknown>(null);
   const [maskVisible, setMaskVisible] = useState(true);
   const [permanentWaterVisible, setPermanentWaterVisible] = useState(false);
-  const [confidenceVisible, setConfidenceVisible] = useState(false);
   const [sarVisible, setSarVisible] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -86,12 +84,6 @@ export default function MapView({ location, scene }: Props) {
           permanentWaterOverlayRef.current = pwOverlay;
         }
 
-        if (scene.probability_url) {
-          const confOverlay = L.imageOverlay(scene.probability_url, bounds, { opacity: 0 });
-          confOverlay.addTo(map as never);
-          confidenceOverlayRef.current = confOverlay;
-        }
-
         mapInstanceRef.current = map;
         setLoading(false);
       } catch (e) {
@@ -109,7 +101,6 @@ export default function MapView({ location, scene }: Props) {
         mapInstanceRef.current = null;
         overlayRef.current = null;
         permanentWaterOverlayRef.current = null;
-        confidenceOverlayRef.current = null;
         sarOverlayRef.current = null;
       }
     };
@@ -126,12 +117,6 @@ export default function MapView({ location, scene }: Props) {
     const overlay = permanentWaterOverlayRef.current as { setOpacity: (o: number) => void };
     overlay.setOpacity(permanentWaterVisible ? 0.55 : 0);
   }, [permanentWaterVisible]);
-
-  useEffect(() => {
-    if (!confidenceOverlayRef.current) return;
-    const overlay = confidenceOverlayRef.current as { setOpacity: (o: number) => void };
-    overlay.setOpacity(confidenceVisible ? 0.7 : 0);
-  }, [confidenceVisible]);
 
   useEffect(() => {
     if (!sarOverlayRef.current) return;
@@ -294,28 +279,33 @@ export default function MapView({ location, scene }: Props) {
               {sarVisible ? "SAR image on" : "SAR image off"}
             </button>
           ) : null}
+        </div>
+      )}
 
-          {scene.probability_url ? (
-            <button
-              onClick={() => setConfidenceVisible((v) => !v)}
-              className="flex items-center gap-2 text-xs font-medium px-3 py-2 rounded-lg transition-all"
-              style={{
-                background: confidenceVisible ? "#efecfe" : "var(--panel)",
-                border: confidenceVisible ? "1px solid #c9bdf6" : "1px solid var(--line)",
-                color: confidenceVisible ? "var(--layer-confidence)" : "var(--text-500)",
-                boxShadow: "0 1px 4px rgba(13,31,51,0.08)",
-              }}
-            >
-              <div style={{ width: 7, height: 7, borderRadius: "50%", background: confidenceVisible ? "var(--layer-confidence)" : "#c9d3dd" }} />
-              {confidenceVisible ? "Confidence on" : "Confidence off"}
-            </button>
-          ) : (
-            <div
-              className="text-xs px-3 py-2 rounded-lg"
-              style={{ background: "var(--panel)", border: "1px solid var(--line)", color: "var(--text-300)", boxShadow: "0 1px 4px rgba(13,31,51,0.08)" }}
-            >
-              Confidence layer pending
-            </div>
+      {!loading && !error && (scene.mask_url || scene.permanent_water_url || scene.sar_url) && (
+        <div
+          style={{
+            position: "absolute", bottom: 12, left: 12, zIndex: 1000,
+            background: "var(--panel)", border: "1px solid var(--line)",
+            borderRadius: 8, padding: "8px 10px",
+            boxShadow: "0 1px 4px rgba(13,31,51,0.08)",
+            display: "flex", flexDirection: "column", gap: 4,
+          }}
+        >
+          <div
+            className="text-[9px] font-semibold tracking-widest mb-0.5"
+            style={{ fontFamily: "var(--font-mono)", color: "var(--text-300)" }}
+          >
+            HOW TO READ THIS MAP
+          </div>
+          {scene.mask_url && (
+            <LegendRow color="var(--layer-water)" text="Bright blue — flood detected by the model" />
+          )}
+          {scene.permanent_water_url && (
+            <LegendRow color="var(--layer-permanent)" text="Muted blue — permanent water, not new flooding" />
+          )}
+          {scene.sar_url && (
+            <LegendRow color="var(--text-500)" text="Grayscale — raw Sentinel-1 radar image" />
           )}
         </div>
       )}
@@ -332,6 +322,17 @@ export default function MapView({ location, scene }: Props) {
           No mask yet — waiting for model output
         </div>
       )}
+    </div>
+  );
+}
+
+function LegendRow({ color, text }: { color: string; text: string }) {
+  return (
+    <div className="flex items-center gap-2">
+      <div style={{ width: 7, height: 7, borderRadius: "50%", background: color, flexShrink: 0 }} />
+      <span className="text-[10px]" style={{ color: "var(--text-500)" }}>
+        {text}
+      </span>
     </div>
   );
 }
