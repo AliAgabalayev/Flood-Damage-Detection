@@ -13,11 +13,9 @@ export default function MapView({ location, scene }: Props) {
   const mapInstanceRef = useRef<unknown>(null);
   const overlayRef = useRef<unknown>(null);
   const permanentWaterOverlayRef = useRef<unknown>(null);
-  const confidenceOverlayRef = useRef<unknown>(null);
   const sarOverlayRef = useRef<unknown>(null);
   const [maskVisible, setMaskVisible] = useState(true);
   const [permanentWaterVisible, setPermanentWaterVisible] = useState(false);
-  const [confidenceVisible, setConfidenceVisible] = useState(false);
   const [sarVisible, setSarVisible] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -86,12 +84,6 @@ export default function MapView({ location, scene }: Props) {
           permanentWaterOverlayRef.current = pwOverlay;
         }
 
-        if (scene.probability_url) {
-          const confOverlay = L.imageOverlay(scene.probability_url, bounds, { opacity: 0 });
-          confOverlay.addTo(map as never);
-          confidenceOverlayRef.current = confOverlay;
-        }
-
         mapInstanceRef.current = map;
         setLoading(false);
       } catch (e) {
@@ -109,7 +101,6 @@ export default function MapView({ location, scene }: Props) {
         mapInstanceRef.current = null;
         overlayRef.current = null;
         permanentWaterOverlayRef.current = null;
-        confidenceOverlayRef.current = null;
         sarOverlayRef.current = null;
       }
     };
@@ -126,12 +117,6 @@ export default function MapView({ location, scene }: Props) {
     const overlay = permanentWaterOverlayRef.current as { setOpacity: (o: number) => void };
     overlay.setOpacity(permanentWaterVisible ? 0.55 : 0);
   }, [permanentWaterVisible]);
-
-  useEffect(() => {
-    if (!confidenceOverlayRef.current) return;
-    const overlay = confidenceOverlayRef.current as { setOpacity: (o: number) => void };
-    overlay.setOpacity(confidenceVisible ? 0.7 : 0);
-  }, [confidenceVisible]);
 
   useEffect(() => {
     if (!sarOverlayRef.current) return;
@@ -294,33 +279,10 @@ export default function MapView({ location, scene }: Props) {
               {sarVisible ? "SAR image on" : "SAR image off"}
             </button>
           ) : null}
-
-          {scene.probability_url ? (
-            <button
-              onClick={() => setConfidenceVisible((v) => !v)}
-              className="flex items-center gap-2 text-xs font-medium px-3 py-2 rounded-lg transition-all"
-              style={{
-                background: confidenceVisible ? "#efecfe" : "var(--panel)",
-                border: confidenceVisible ? "1px solid #c9bdf6" : "1px solid var(--line)",
-                color: confidenceVisible ? "var(--layer-confidence)" : "var(--text-500)",
-                boxShadow: "0 1px 4px rgba(13,31,51,0.08)",
-              }}
-            >
-              <div style={{ width: 7, height: 7, borderRadius: "50%", background: confidenceVisible ? "var(--layer-confidence)" : "#c9d3dd" }} />
-              {confidenceVisible ? "Confidence on" : "Confidence off"}
-            </button>
-          ) : (
-            <div
-              className="text-xs px-3 py-2 rounded-lg"
-              style={{ background: "var(--panel)", border: "1px solid var(--line)", color: "var(--text-300)", boxShadow: "0 1px 4px rgba(13,31,51,0.08)" }}
-            >
-              Confidence layer pending
-            </div>
-          )}
         </div>
       )}
 
-      {!loading && !error && (scene.mask_url || scene.permanent_water_url || scene.probability_url || scene.sar_url) && (
+      {!loading && !error && (scene.mask_url || scene.permanent_water_url || scene.sar_url) && (
         <div
           style={{
             position: "absolute", bottom: 12, left: 12, zIndex: 1000,
@@ -341,9 +303,6 @@ export default function MapView({ location, scene }: Props) {
           )}
           {scene.permanent_water_url && (
             <LegendRow color="var(--layer-permanent)" text="Muted blue — permanent water, not new flooding" />
-          )}
-          {scene.probability_url && (
-            <LegendRow color="var(--layer-confidence)" text="Purple — model confidence (brighter = more certain)" />
           )}
           {scene.sar_url && (
             <LegendRow color="var(--text-500)" text="Grayscale — raw Sentinel-1 radar image" />

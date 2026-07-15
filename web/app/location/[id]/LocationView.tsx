@@ -185,12 +185,6 @@ export default function LocationView({ location }: Props) {
             available={!!activeScene.permanent_water_url}
           />
           <LayerRow
-            color="var(--layer-confidence)"
-            label="Model confidence"
-            hint="Purple — brighter means more certain"
-            available={!!activeScene.probability_url}
-          />
-          <LayerRow
             color="var(--text-500)"
             label="Raw SAR scene (verify layers)"
             hint="Grayscale — the unprocessed radar image"

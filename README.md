@@ -180,3 +180,7 @@ npm run build   # production build
 - [docs/fixed_locations.md](docs/fixed_locations.md) — the five fixed evaluation
   locations. Per-country generalization is measured with the LOCO runner
   (`scripts/run_loco.py`, `scripts/make_loco_splits.py`).
+- [docs/loco_generalization.md](docs/loco_generalization.md) — Leave-One-Country-Out
+  generalization study: for each Sen1Floods11 country, the model is retrained on
+  the other 9 and evaluated on every chip of the held-out country, measuring
+  generalization to an unseen climate/geography rather than interpolation.
