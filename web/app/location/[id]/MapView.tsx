@@ -320,6 +320,37 @@ export default function MapView({ location, scene }: Props) {
         </div>
       )}
 
+      {!loading && !error && (scene.mask_url || scene.permanent_water_url || scene.probability_url || scene.sar_url) && (
+        <div
+          style={{
+            position: "absolute", bottom: 12, left: 12, zIndex: 1000,
+            background: "var(--panel)", border: "1px solid var(--line)",
+            borderRadius: 8, padding: "8px 10px",
+            boxShadow: "0 1px 4px rgba(13,31,51,0.08)",
+            display: "flex", flexDirection: "column", gap: 4,
+          }}
+        >
+          <div
+            className="text-[9px] font-semibold tracking-widest mb-0.5"
+            style={{ fontFamily: "var(--font-mono)", color: "var(--text-300)" }}
+          >
+            HOW TO READ THIS MAP
+          </div>
+          {scene.mask_url && (
+            <LegendRow color="var(--layer-water)" text="Bright blue — flood detected by the model" />
+          )}
+          {scene.permanent_water_url && (
+            <LegendRow color="var(--layer-permanent)" text="Muted blue — permanent water, not new flooding" />
+          )}
+          {scene.probability_url && (
+            <LegendRow color="var(--layer-confidence)" text="Purple — model confidence (brighter = more certain)" />
+          )}
+          {scene.sar_url && (
+            <LegendRow color="var(--text-500)" text="Grayscale — raw Sentinel-1 radar image" />
+          )}
+        </div>
+      )}
+
       {!loading && !error && !scene.mask_url && (
         <div
           style={{
@@ -332,6 +363,17 @@ export default function MapView({ location, scene }: Props) {
           No mask yet — waiting for model output
         </div>
       )}
+    </div>
+  );
+}
+
+function LegendRow({ color, text }: { color: string; text: string }) {
+  return (
+    <div className="flex items-center gap-2">
+      <div style={{ width: 7, height: 7, borderRadius: "50%", background: color, flexShrink: 0 }} />
+      <span className="text-[10px]" style={{ color: "var(--text-500)" }}>
+        {text}
+      </span>
     </div>
   );
 }

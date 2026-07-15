@@ -6,6 +6,7 @@ import { Location } from "@/types/location";
 import MapView from "./MapView";
 import Sidebar from "@/components/Sidebar";
 import { severityColor, severityLabel } from "@/lib/severity";
+import { buildInterpretation } from "@/lib/interpretation";
 import allLocationsData from "@/public/data/locations.json";
 
 interface Props {
@@ -23,6 +24,7 @@ export default function LocationView({ location }: Props) {
   const [selectedIndex, setSelectedIndex] = useState(0);
   const activeScene = sortedScenes[selectedIndex];
   const color = severityColor(activeScene.flooded_pct);
+  const interpretation = buildInterpretation(activeScene);
 
   return (
     <div className="flex h-screen overflow-hidden" style={{ background: "var(--bg)" }}>
@@ -127,6 +129,19 @@ export default function LocationView({ location }: Props) {
           </div>
         </div>
 
+        {/* Interpretation */}
+        {interpretation && (
+          <>
+            <SectionLabel>Interpretation</SectionLabel>
+            <p
+              className="text-xs leading-relaxed mb-6 px-4 py-3.5 rounded-xl"
+              style={{ background: "var(--signal-soft)", border: "1px solid var(--signal-line)", color: "var(--text-900)" }}
+            >
+              {interpretation}
+            </p>
+          </>
+        )}
+
         {/* Scene timeline */}
         <SectionLabel>Scene timeline</SectionLabel>
         <div className="flex flex-col gap-1 mb-6">
@@ -157,10 +172,30 @@ export default function LocationView({ location }: Props) {
         {/* Layers */}
         <SectionLabel>Map layers</SectionLabel>
         <div className="flex flex-col gap-2 mb-6">
-          <LayerRow color="var(--layer-water)" label="Flood mask" available={!!activeScene.mask_url} />
-          <LayerRow color="var(--layer-permanent)" label="Permanent water (JRC)" available={!!activeScene.permanent_water_url} />
-          <LayerRow color="var(--layer-confidence)" label="Model confidence" available={!!activeScene.probability_url} />
-          <LayerRow color="var(--text-500)" label="Raw SAR scene (verify layers)" available={!!activeScene.sar_url} />
+          <LayerRow
+            color="var(--layer-water)"
+            label="Flood mask"
+            hint="Bright blue — flood detected by the model"
+            available={!!activeScene.mask_url}
+          />
+          <LayerRow
+            color="var(--layer-permanent)"
+            label="Permanent water (JRC)"
+            hint="Muted blue — water that's normally there, not new flooding"
+            available={!!activeScene.permanent_water_url}
+          />
+          <LayerRow
+            color="var(--layer-confidence)"
+            label="Model confidence"
+            hint="Purple — brighter means more certain"
+            available={!!activeScene.probability_url}
+          />
+          <LayerRow
+            color="var(--text-500)"
+            label="Raw SAR scene (verify layers)"
+            hint="Grayscale — the unprocessed radar image"
+            available={!!activeScene.sar_url}
+          />
         </div>
         <p className="text-[11px] mb-6 -mt-3" style={{ color: "var(--text-300)" }}>
           Toggle layers from the buttons on the map.
@@ -213,21 +248,40 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
   );
 }
 
-function LayerRow({ color, label, available }: { color: string; label: string; available: boolean }) {
+function LayerRow({
+  color,
+  label,
+  hint,
+  available,
+}: {
+  color: string;
+  label: string;
+  hint: string;
+  available: boolean;
+}) {
   return (
-    <div className="flex items-center gap-2.5">
+    <div className="flex items-start gap-2.5">
       <span
-        className="w-2.5 h-2.5 rounded-sm flex-shrink-0"
+        className="w-2.5 h-2.5 rounded-sm flex-shrink-0 mt-0.5"
         style={{ background: available ? color : "var(--panel-sunken)", border: available ? "none" : "1px solid var(--line)" }}
       />
-      <span className="text-xs flex-1" style={{ color: available ? "var(--text-900)" : "var(--text-300)" }}>
-        {label}
-      </span>
-      {!available && (
-        <span className="text-[10px]" style={{ color: "var(--text-300)" }}>
-          pending
-        </span>
-      )}
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-2">
+          <span className="text-xs" style={{ color: available ? "var(--text-900)" : "var(--text-300)" }}>
+            {label}
+          </span>
+          {!available && (
+            <span className="text-[10px]" style={{ color: "var(--text-300)" }}>
+              pending
+            </span>
+          )}
+        </div>
+        {available && (
+          <p className="text-[10px] mt-0.5" style={{ color: "var(--text-300)" }}>
+            {hint}
+          </p>
+        )}
+      </div>
     </div>
   );
 }
