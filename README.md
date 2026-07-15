@@ -20,7 +20,7 @@ DEM-derived layover/shadow post-processing, and browsable in a Next.js map viewe
 |:------------|:----------------|
 | **Ali Agabalazade** | Team Lead, DL Engineer, Data Engineering, Documentation |
 | **Nigar Rustamova** | Training Optimization, Backend Development, Model Development |
-| **Isgandar Panahov** | Frontend Development, User Interface Design, model Evaluation |
+| **Isgandar Panahov** | Frontend Development, User Interface Design, Model Evaluation |
 | **Jala Suleymanova** | Data Engineering, Data Pipeline Development, Documentation, Presentation |
 
 ## Decisions (locked)
