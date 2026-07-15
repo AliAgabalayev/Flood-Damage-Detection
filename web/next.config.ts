@@ -7,6 +7,7 @@ const nextConfig: NextConfig = {
     unoptimized: true,
   },
   basePath: process.env.NODE_ENV === "production" ? "/Flood-Damage-Detection" : "",
+  allowedDevOrigins: ["*.trycloudflare.com"],
 };
 
 export default nextConfig;

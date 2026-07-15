@@ -11,7 +11,7 @@ const plexMono = IBM_Plex_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "FloodScan — SAR Flood Monitoring",
+  title: "Sea the Flood — SAR Flood Monitoring",
   description: "Binary flood-water segmentation from Sentinel-1 SAR imagery",
 };
 
