@@ -1,10 +1,14 @@
 # Sea the Flood
 
-<img src="docs/assets/logo.jpg" alt="Sea the Flood logo" width="700">
+Team GALE maps floodwater from Sentinel-1 radar imagery with SegFormer-B4. Our [leave-one-country-out study](docs/loco_generalization.md) tests how well the model transfers to countries held out during training.
 
-## Team: Gale
+**Baku, 7 April 2026**
 
-## SAR-Based Flood Damage Detection Using Deep Learning
+| Sentinel-1 radar image | Predicted flood mask |
+| --- | --- |
+| ![Radar image of Baku](web/public/data/baku/2026-04-07/sar.png) | ![Predicted flood extent for the same scene](web/public/data/baku/2026-04-07/flood_mask.png) |
+
+## Model and data
 
 End-to-end **binary flood-water semantic segmentation** from **Sentinel-1 SAR**
 (Sen1Floods11), built with **PyTorch Lightning + segmentation-models-pytorch**.
