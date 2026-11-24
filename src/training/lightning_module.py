@@ -10,10 +10,10 @@ from utils.config import Config
 
 
 class FloodModel(pl.LightningModule):
-    def __init__(self, cfg: Config):
+    def __init__(self, cfg: Config, *, checkpoint_restore: bool = False):
         super().__init__()
         self.cfg = cfg
-        self.net = build_model(cfg)
+        self.net = build_model(cfg, checkpoint_restore=checkpoint_restore)
         self.loss = build_loss(cfg)
         self.val_metrics = build_scorer()
 

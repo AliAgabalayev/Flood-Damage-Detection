@@ -186,6 +186,33 @@ make serve-api   # runs on :8000, loads the production checkpoint once at startu
 
 The page calls `NEXT_PUBLIC_API_BASE_URL` if set, otherwise `http://localhost:8000`.
 
+Upload a north-up WGS 84 (EPSG:4326) GeoTIFF with at least two bands (VV, VH first).
+The server uses local reference GeoTIFFs in the configured JRC occurrence and
+DEM directories. Install the tiles for the area of interest using the reference
+download scripts or a local archive before serving requests. The terrain filter
+uses the configured orbit and midpoint incidence, so set these for the
+acquisitions served by the instance.
+
+Successful responses retain the PNGs, geographic bounds and area statistics and
+add a `fusion` object with coverage counts and the nominal geometry. A
+`partial_coverage` result excludes DEM gaps and a one-pixel boundary. JRC gaps
+trigger no JRC subtraction. The area and percentage describe positive pixels in
+the returned overlay, with percentage relative to the full raster. If the two
+references have no jointly usable pixels or cannot be aligned, the endpoint
+returns HTTP 503 and no map. Incompatible upload grids return HTTP 422.
+
+Run the upload regression tests with `PYTHONPATH=src python -m pytest -q tests/test_predict_upload.py`
+(install pytest and httpx in the API environment).
+
+## Paper and reproducibility
+
+*Interpolation vs. Generalization in SAR Water Segmentation* reconstructs a
+paired official-test Sen1Floods11 comparison from archived per-chip confusion
+counts and documents an Azerbaijan mapping prototype. The historical ML base
+is commit `867a4f3e3dae9a935578e401f5c5f970e3d0adac`. The manuscript,
+frozen counts, and independent reproduction instructions are in the companion
+review package. Versioned manuscript links can be added after final review.
+
 ## Experiments & studies
 
 - [docs/loss_study.md](docs/loss_study.md) — loss / class-imbalance study.

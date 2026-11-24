@@ -89,7 +89,9 @@ def _select_device(cfg: Config) -> str:
 def _load_model(cfg: Config, device: str) -> FloodModel:
     checkpoint = cfg.inference.checkpoint
     logger.info("Loading checkpoint: %s", checkpoint)
-    model: FloodModel = FloodModel.load_from_checkpoint(checkpoint, cfg=cfg)
+    model: FloodModel = FloodModel.load_from_checkpoint(
+        checkpoint, map_location="cpu", strict=True, cfg=cfg, checkpoint_restore=True,
+    )
     model.eval()
     model.to(device)
     return model

@@ -5,8 +5,7 @@ from typing import Callable, List, Tuple
 
 import numpy as np
 import rasterio
-from rasterio.merge import merge
-from rasterio.warp import reproject, Resampling
+from data.reference_raster import aligned_reference
 
 
 ChannelBuilder = Callable[[np.ndarray], np.ndarray]
@@ -78,41 +77,6 @@ def default_preprocessor(config: object) -> Preprocessor:
     return Preprocessor(specs)
 
 
-def _mosaic_dem(dem_dir: Path, scene_crs, scene_transform, scene_shape: Tuple[int, int], scene_bounds) -> Tuple[np.ndarray, np.ndarray]:
-    intersecting = []
-    for tif in dem_dir.glob("*.tif"):
-        with rasterio.open(tif) as src:
-            b = src.bounds
-            if not (b.right < scene_bounds.left or b.left > scene_bounds.right or b.top < scene_bounds.bottom or b.bottom > scene_bounds.top):
-                intersecting.append(tif)
-
-    if not intersecting:
-        raise FileNotFoundError(f"No DEM tiles in {dem_dir} intersect the scene bounds {tuple(scene_bounds)}.")
-
-    sources = [rasterio.open(t) for t in intersecting]
-    nodata = sources[0].nodata
-    mosaic, mosaic_transform = merge(sources, nodata=nodata) if nodata is not None else merge(sources)
-    dem_crs = sources[0].crs
-    for src in sources:
-        src.close()
-
-    fill_value = nodata if nodata is not None else 0.0
-    dest = np.full(scene_shape, fill_value, dtype=np.float32)
-    reproject(
-        source=mosaic[0],
-        destination=dest,
-        src_transform=mosaic_transform,
-        src_crs=dem_crs,
-        dst_transform=scene_transform,
-        dst_crs=scene_crs,
-        src_nodata=nodata,
-        dst_nodata=nodata,
-        resampling=Resampling.bilinear,
-    )
-    valid = dest != nodata if nodata is not None else np.ones(scene_shape, dtype=bool)
-    return dest, valid
-
-
 def _pixel_spacing_m(transform, bounds) -> Tuple[float, float]:
     mid_lat_rad = np.radians((bounds.top + bounds.bottom) / 2.0)
     dx = abs(transform.a) * 111_320.0 * np.cos(mid_lat_rad)
@@ -136,24 +100,22 @@ def _dilate(mask: np.ndarray) -> np.ndarray:
     return dilated
 
 
-def layover_shadow_mask(
+def terrain_masks(
     scene_path: Path | str,
     dem_dir: Path | str,
     orbit_pass: str,
     near_incidence_deg: float,
     far_incidence_deg: float,
-) -> np.ndarray:
-    scene_path = Path(scene_path)
-    dem_dir = Path(dem_dir)
-
+) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     with rasterio.open(scene_path) as scene:
-        scene_crs = scene.crs
-        scene_transform = scene.transform
-        scene_shape = (scene.height, scene.width)
-        scene_bounds = scene.bounds
+        dem = aligned_reference(scene, dem_dir)
+        dx, dy = _pixel_spacing_m(scene.transform, scene.bounds)
 
-    dem, dem_valid = _mosaic_dem(dem_dir, scene_crs, scene_transform, scene_shape, scene_bounds)
-    dx, dy = _pixel_spacing_m(scene_transform, scene_bounds)
+    dem_valid = np.isfinite(dem)
+    dem_missing = _dilate(~dem_valid)
+    if not dem_valid.any():
+        return dem_missing, dem_valid, dem_missing
+
     slope, aspect = _slope_aspect(dem, dx, dy)
 
     incidence = np.radians((near_incidence_deg + far_incidence_deg) / 2.0)
@@ -164,8 +126,22 @@ def layover_shadow_mask(
 
     layover = local_incidence <= 0.0
     shadow = local_incidence >= (np.pi / 2.0)
-    dem_missing = _dilate(~dem_valid)
-    return layover | shadow | dem_missing
+    return layover | shadow | dem_missing, dem_valid, dem_missing
+
+
+def layover_shadow_mask(
+    scene_path: Path | str,
+    dem_dir: Path | str,
+    orbit_pass: str,
+    near_incidence_deg: float,
+    far_incidence_deg: float,
+) -> np.ndarray:
+    invalid, valid, _ = terrain_masks(
+        scene_path, dem_dir, orbit_pass, near_incidence_deg, far_incidence_deg,
+    )
+    if not valid.any():
+        raise FileNotFoundError("No valid DEM coverage on the scene grid.")
+    return invalid
 
 
 def mask_layover_shadow(flood_mask: np.ndarray, invalid_mask: np.ndarray) -> np.ndarray:

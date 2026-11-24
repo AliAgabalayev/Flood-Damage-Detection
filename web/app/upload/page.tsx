@@ -5,15 +5,20 @@ import Link from "next/link";
 import Sidebar from "@/components/Sidebar";
 import MapView from "@/app/location/[id]/MapView";
 import { Location, SceneArchive } from "@/types/location";
-import { severityColor, severityLabel } from "@/lib/severity";
-import { buildInterpretation } from "@/lib/interpretation";
 import locationsData from "@/public/data/locations.json";
 
 const locations = locationsData as unknown as Location[];
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000";
 
+interface FusionCoverage {
+  status: "applied" | "partial_coverage";
+  joint_covered_pixels: number;
+  raster_pixels: number;
+}
+
 interface PredictResponse {
+  fusion?: FusionCoverage;
   flooded_area_km2: number;
   flooded_pct: number;
   bounds: [[number, number], [number, number]];
@@ -28,7 +33,7 @@ export default function UploadPage() {
   const [file, setFile] = useState<File | null>(null);
   const [status, setStatus] = useState<Status>("idle");
   const [error, setError] = useState<string | null>(null);
-  const [result, setResult] = useState<{ location: Location; scene: SceneArchive } | null>(null);
+  const [result, setResult] = useState<{ location: Location; scene: SceneArchive; fusion?: FusionCoverage } | null>(null);
 
   async function runPrediction() {
     if (!file) return;
@@ -69,7 +74,7 @@ export default function UploadPage() {
         scenes: [scene],
       };
 
-      setResult({ location, scene });
+      setResult({ location, scene, fusion: data.fusion });
       setStatus("idle");
     } catch (e) {
       setError(e instanceof Error ? e.message : "Prediction failed.");
@@ -84,8 +89,10 @@ export default function UploadPage() {
     setError(null);
   }
 
-  const color = result ? severityColor(result.scene.flooded_pct) : "var(--text-300)";
-  const interpretation = result ? buildInterpretation(result.scene) : null;
+  const fusion = result?.fusion;
+  const coverage = fusion
+    ? (100 * fusion.joint_covered_pixels / fusion.raster_pixels).toFixed(2)
+    : null;
 
   return (
     <div className="flex h-screen overflow-hidden" style={{ background: "var(--bg)" }}>
@@ -138,7 +145,7 @@ export default function UploadPage() {
                     {file ? file.name : "Choose a GeoTIFF"}
                   </span>
                   <span className="text-[11px]" style={{ color: "var(--text-300)" }}>
-                    .tif or .tiff, Sentinel-1 VV+VH bands
+                    North-up WGS 84 GeoTIFF, Sentinel-1 VV+VH bands
                   </span>
                 </label>
 
@@ -211,45 +218,23 @@ export default function UploadPage() {
             className="rounded-xl px-4 py-4 mb-6"
             style={{ background: "var(--panel-sunken)", border: "1px solid var(--line-soft)" }}
           >
-            <div className="flex items-center justify-between mb-3">
-              <span
-                className="text-[10px] font-semibold px-2 py-0.5 rounded-md"
-                style={{ background: color, color: "#fff" }}
-              >
-                {severityLabel(result.scene.flooded_pct)}
-              </span>
-            </div>
             <div className="flex items-baseline gap-2 mb-0.5">
-              <span className="text-2xl font-semibold tracking-tight" style={{ fontFamily: "var(--font-display)", color }}>
+              <span className="text-2xl font-semibold tracking-tight" style={{ fontFamily: "var(--font-display)", color: "var(--text-900)" }}>
                 {result.scene.flooded_pct}%
               </span>
-              <span className="text-xs" style={{ color: "var(--text-500)" }}>of area flooded</span>
+              <span className="text-xs" style={{ color: "var(--text-500)" }}>of scene mapped as water</span>
             </div>
             <div className="text-xs" style={{ color: "var(--text-500)" }}>
-              {result.scene.flooded_area_km2} km² flooded surface
+              {result.scene.flooded_area_km2} km² mapped area
             </div>
           </div>
 
-          {interpretation && (
-            <>
-              <p
-                className="text-[10px] font-medium tracking-widest mb-2.5"
-                style={{ fontFamily: "var(--font-mono)", color: "var(--text-300)" }}
-              >
-                INTERPRETATION
-              </p>
-              <p
-                className="text-xs leading-relaxed mb-6 px-4 py-3.5 rounded-xl"
-                style={{ background: "var(--signal-soft)", border: "1px solid var(--signal-line)", color: "var(--text-900)" }}
-              >
-                {interpretation}
-              </p>
-            </>
-          )}
-
-          <p className="text-[11px] mb-6" style={{ color: "var(--text-300)" }}>
-            Permanent-water and layover/shadow layers aren&apos;t available for custom
-            uploads — those require pre-fetched reference data for the specific area.
+          <p role="status" className="text-xs mb-6" style={{ color: "var(--text-500)" }}>
+            {fusion?.status === "partial_coverage"
+              ? `Partial reference coverage. Both filters could assess ${coverage}% of the scene. DEM gaps and their edges are excluded.`
+              : fusion?.status === "applied"
+                ? "JRC occurrence and DEM filters were applied across the scene."
+                : "Reference coverage was unavailable in the API response."}
           </p>
 
           <button
