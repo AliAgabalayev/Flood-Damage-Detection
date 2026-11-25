@@ -212,7 +212,7 @@ Run the upload regression tests with `PYTHONPATH=src python -m pytest -q tests/t
 *Interpolation vs. Generalization in SAR Water Segmentation* reconstructs a
 paired official-test Sen1Floods11 comparison from archived per-chip confusion
 counts and documents an Azerbaijan mapping prototype. The historical ML base
-is commit `867a4f3e3dae9a935578e401f5c5f970e3d0adac`. The [paper v1.0 manuscript and reproduction package](https://github.com/AliAgabalayev/flood-paper/tree/paper-v1.0)
+is commit `867a4f3e3dae9a935578e401f5c5f970e3d0adac`. The [paper v1.0 manuscript and reproduction package](https://github.com/AliAgabalayev/sar-flood-segmentation-loco/tree/paper-v1.0)
 include the frozen chip counts, figure generation and verified scene replay.
 
 ## Experiments & studies
@@ -223,7 +223,7 @@ include the frozen chip counts, figure generation and verified scene replay.
 - [docs/fixed_locations.md](docs/fixed_locations.md) — the five fixed evaluation
   locations. Per-country generalization is measured with the LOCO runner
   (`scripts/run_loco.py`, `scripts/make_loco_splits.py`).
-- [docs/loco_generalization.md](docs/loco_generalization.md) — Leave-One-Country-Out
-  generalization study: for each Sen1Floods11 country, the model is retrained on
-  the other 9 and evaluated on every chip of the held-out country, measuring
-  generalization to an unseen climate/geography rather than interpolation.
+- [Current LOCO paper](https://github.com/AliAgabalayev/sar-flood-segmentation-loco)
+  — paired evaluation on identical official test chips.
+  The [July 2026 LOCO experiment](docs/loco_generalization.md) preserves the
+  earlier all-chip results and their evaluation protocol.
