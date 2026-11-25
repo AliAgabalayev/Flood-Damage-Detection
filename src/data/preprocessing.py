@@ -12,6 +12,7 @@ ChannelBuilder = Callable[[np.ndarray], np.ndarray]
 
 ClipRange = Tuple[float, float]
 
+# Nominal sensor-to-ground azimuth, clockwise from north for right-looking SAR.
 LOOK_AZIMUTH_DEG = {"ASCENDING": 90.0, "DESCENDING": 270.0}
 
 def build_vv(image: np.ndarray) -> np.ndarray:
@@ -85,10 +86,23 @@ def _pixel_spacing_m(transform, bounds) -> Tuple[float, float]:
 
 
 def _slope_aspect(dem: np.ndarray, dx: float, dy: float) -> Tuple[np.ndarray, np.ndarray]:
+    # North-up raster indices increase south by row and east by column.
     grad_y, grad_x = np.gradient(dem, dy, dx)
     slope = np.arctan(np.hypot(grad_x, grad_y))
+    # Downhill components are (-grad_x east, +grad_y north).
     aspect = np.arctan2(-grad_x, grad_y) % (2.0 * np.pi)
     return slope, aspect
+
+
+def _local_incidence(
+    dem: np.ndarray, dx: float, dy: float, orbit_pass: str, incidence_deg: float,
+) -> np.ndarray:
+    slope, downhill_aspect = _slope_aspect(dem, dx, dy)
+    look_azimuth = np.radians(LOOK_AZIMUTH_DEG[orbit_pass])
+    downhill_range = np.arctan(np.tan(slope) * np.cos(look_azimuth - downhill_aspect))
+    # Uphill along the sensor-to-ground direction makes the surface face the
+    # sensor and reduces incidence. The downhill range angle is then negative.
+    return np.radians(incidence_deg) + downhill_range
 
 
 def _dilate(mask: np.ndarray) -> np.ndarray:
@@ -116,13 +130,8 @@ def terrain_masks(
     if not dem_valid.any():
         return dem_missing, dem_valid, dem_missing
 
-    slope, aspect = _slope_aspect(dem, dx, dy)
-
-    incidence = np.radians((near_incidence_deg + far_incidence_deg) / 2.0)
-    look_azimuth = np.radians(LOOK_AZIMUTH_DEG[orbit_pass])
-
-    range_slope = np.arctan(np.tan(slope) * np.cos(look_azimuth - aspect))
-    local_incidence = incidence - range_slope
+    incidence_deg = (near_incidence_deg + far_incidence_deg) / 2.0
+    local_incidence = _local_incidence(dem, dx, dy, orbit_pass, incidence_deg)
 
     layover = local_incidence <= 0.0
     shadow = local_incidence >= (np.pi / 2.0)

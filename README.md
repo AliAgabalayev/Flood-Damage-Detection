@@ -191,7 +191,10 @@ The server uses local reference GeoTIFFs in the configured JRC occurrence and
 DEM directories. Install the tiles for the area of interest using the reference
 download scripts or a local archive before serving requests. The terrain filter
 uses the configured orbit and midpoint incidence, so set these for the
-acquisitions served by the instance.
+acquisitions served by the instance. With eastward (ascending) or westward
+(descending) sensor-to-ground look, terrain rising along the look direction
+reduces local incidence. The precomputed viewer archives retain their
+historical terrain masks.
 
 Successful responses retain the PNGs, geographic bounds and area statistics and
 add a `fusion` object with coverage counts and the nominal geometry. A
@@ -209,9 +212,8 @@ Run the upload regression tests with `PYTHONPATH=src python -m pytest -q tests/t
 *Interpolation vs. Generalization in SAR Water Segmentation* reconstructs a
 paired official-test Sen1Floods11 comparison from archived per-chip confusion
 counts and documents an Azerbaijan mapping prototype. The historical ML base
-is commit `867a4f3e3dae9a935578e401f5c5f970e3d0adac`. The manuscript,
-frozen counts, and independent reproduction instructions are in the companion
-review package. Versioned manuscript links can be added after final review.
+is commit `867a4f3e3dae9a935578e401f5c5f970e3d0adac`. The [paper v1.0 manuscript and reproduction package](https://github.com/AliAgabalayev/flood-paper/tree/paper-v1.0)
+include the frozen chip counts, figure generation and verified scene replay.
 
 ## Experiments & studies
 
