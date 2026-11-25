@@ -227,3 +227,7 @@ include the frozen chip counts, figure generation and verified scene replay.
   — paired evaluation on identical official test chips.
   The [July 2026 LOCO experiment](docs/loco_generalization.md) preserves the
   earlier all-chip results and their evaluation protocol.
+
+## License
+
+The MIT License applies only to original project software authored by the copyright holders, including their source code, scripts, tests, and application code. It does not relicense third-party software, datasets, satellite imagery, maps, model weights or checkpoints, generated data products, third-party assets, or other material for which the authors do not hold the necessary rights. Those materials remain subject to their respective original licenses and terms. See [LICENSE](LICENSE) for the full MIT text and scope.
